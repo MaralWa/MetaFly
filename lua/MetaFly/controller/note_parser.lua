@@ -1,6 +1,7 @@
 local lyaml = require("lyaml")
 local api = vim.api
 local buf, win
+local sqlite = require("sqlite")
 
 local function center(str)
 	local width = api.nvim_win_get_width(0)
@@ -60,22 +61,35 @@ local function open_window()
 	api.nvim_buf_add_highlight(buf, -1, "WhidHeader", 0, 0, -1)
 end
 
+local function printTable(content, outtable, prefix)
+	for k, v in pairs(outtable) do
+		if type(v) == "string" then
+			table.insert(content, prefix .. k .. " -> " .. v)
+		else
+			if type(v) == "table" then
+				table.insert(content, k .. " table")
+				printTable(content, v, prefix .. "  ")
+			end
+		end
+	end
+end
+
 local function update_view()
 	local lineNumber = 1
 	--local bufferNumber = vim.fn.bufnr("%")
 	local bufferNumber = 11
 	local line = vim.fn.getbufoneline(bufferNumber, lineNumber)
 	--
-	local yamlHeaderStr = ""
-	local yamlHeader = {}
+	local viewContentStr = ""
+	local viewContent = {}
 	if line == "---" then
-		yamlHeader[lineNumber] = line
+		viewContent[lineNumber] = line
 		yamlHeaderStr = line
 		local endOfYaml = false
 		while not endOfYaml do
 			lineNumber = lineNumber + 1
 			line = vim.fn.getbufoneline(bufferNumber, lineNumber)
-			yamlHeader[lineNumber] = line
+			viewContent[lineNumber] = line
 			yamlHeaderStr = yamlHeaderStr .. "\n" .. line
 			if line == "---" then
 				endOfYaml = true
@@ -83,28 +97,61 @@ local function update_view()
 		end
 	end
 
-	-- yamlHeader[lineNumber] = yamlHeaderStr
+	-- viewContent[lineNumber] = viewContentStr
 	local yamlData = lyaml.load(yamlHeaderStr)
-	for k, v in pairs(yamlData) do
-		lineNumber = lineNumber + 1
-		if type(v) == "string" then
-			yamlHeader[lineNumber] = k .. " -> " .. v -- tostring(yamlData[k]) .. " - " .. table.maxn(yamlData[k])
-		end
-		if type(v) == "table" then
-			yamlHeader[lineNumber] = k .. " -> table.len " .. table.maxn(v)
+	--	for k, v in pairs(yamlData) do
+	--		if type(v) == "string" then
+	--			table.insert(viewContent, k .. " - " .. v)
+	--		end
+	--		if type(v) == "table" then
+	--			table.insert(viewContent, k .. " -> table.len " .. table.maxn(v))
+	--		end
+	--	end
+	--	local currentBuffer = api.nvim_win_get_buf(0)
+	--	viewContent[1] = "Hallo, Welt!"
+	--	viewContent[2] = "Buffernummer: " .. currentBuffer
+	--	--viewContent[2] = vim.fn.getbufline(bufferNumber, 2)
+	--	-- viewContent[3] = api.nvim_buf_get_lines(currentBuffer, 2, 2, false)[0]
+	--	local bufName = api.nvim_buf_get_name(currentBuffer)
+	--	viewContent[3] = vim.fn.getbufoneline(currentBuffer, 2)
+	--	viewContent[4] = bufName
+
+	--       local db2 = sqlite.open("/Users/sarah/Documents/vimwiki/MetaFly/metadata.db")
+	local entries = sqlite.with_open("/Users/sarah/Documents/vimwiki/MetaFly/metadata.db", function(db)
+		-- return db:select("slipBox")
+		printTable(viewContent, yamlData, "")
+		printTable(viewContent, db, "")
+		db:insert("note", { id = yamlData["id"], title = yamlData["title"], fileName = "", idSlipBox = "VimWiki" })
+		return db:eval("select * from note")
+	end)
+	table.insert(viewContent, "")
+	if type(entries) == "table" then
+		table.insert(viewContent, "Anzahl: " .. table.maxn(entries))
+	end
+	for key, row in pairs(entries) do
+		for column, value in pairs(row) do
+			table.insert(viewContent, column .. ": " .. value)
 		end
 	end
-	--	local currentBuffer = api.nvim_win_get_buf(0)
-	--	yamlHeader[1] = "Hallo, Welt!"
-	--	yamlHeader[2] = "Buffernummer: " .. currentBuffer
-	--	--yamlHeader[2] = vim.fn.getbufline(bufferNumber, 2)
-	--	-- yamlHeader[3] = api.nvim_buf_get_lines(currentBuffer, 2, 2, false)[0]
-	--	local bufName = api.nvim_buf_get_name(currentBuffer)
-	--	yamlHeader[3] = vim.fn.getbufoneline(currentBuffer, 2)
-	--	yamlHeader[4] = bufName
-	api.nvim_buf_set_lines(buf, 0, -1, false, yamlHeader)
+
+	table.insert(viewContent, "")
+	local db2 = sqlite.open("/Users/sarah/Documents/vimwiki/MetaFly/metadata.db")
+	if db2 ~= nil then
+		table.insert(viewContent, "neue db:" .. tostring(db2))
+		table.insert(viewContent, "neue db type:" .. type(db2))
+		printTable(viewContent, db2, "")
+		-- db2:open()
+		-- local rs = db2:eval("select * from slipBox")
+		-- local rs = db2:select("slipBox")
+		-- local rs =
+		-- 	db2:insert("note", { id = yamlData["id"], title = yamlData["title"], fileName = "", idSlipBox = "VimWiki" })
+		-- table.insert(viewContent, "insert resutl: " .. type(rs))
+	else
+		table.insert(viewContent, "keine DB Verbindung")
+	end
+
+	api.nvim_buf_set_lines(buf, 0, -1, false, viewContent)
 end
 
 open_window()
 update_view()
--- echo yamlHeader
