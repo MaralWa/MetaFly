@@ -74,12 +74,12 @@ database.Note = tbl("Note", {
 	taqs = { "text" },
 	fileName = { "text", required = true, unique = true },
 	idNoteBox = { reference = "NoteBox.id" },
-	created = { "text" },
-	lastUpdated = { "text" },
+	created = { "date", default = strftime("%s", "now"), required = true },
+	lastUpdated = { "date", default = strftime("%s", "now"), required = true },
 })
 
 ---@class Metadata
-database.Metadata = tbl("Metadata", {
+database.Metadata = tbl("MetaData", {
 	id = true,
 	name = { "text", required = true, unique = true },
 	type = { "text" },
@@ -87,8 +87,9 @@ database.Metadata = tbl("Metadata", {
 
 ---@class MetadataToNote
 database.MetadataToNote = tbl("MetadataToNote", {
-	idMetadata = { "integer", required = true },
-	idNote = { "integer", required = true },
+	id = true,
+	idMetaData = { "integer", reference = "MetaData.id", required = true },
+	idNote = { "integer", reference = "Note.id", required = true },
 	value = { "text" },
 })
 

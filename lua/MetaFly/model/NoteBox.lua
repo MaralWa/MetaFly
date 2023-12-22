@@ -4,10 +4,12 @@ local database = require("MetaFly.model.database")
 ---@field private id number
 ---@field private path string
 ---@field private name string
+---@field private lastUpdated number
 local NoteBox = {
 	id = 0,
 	path = "",
 	name = "",
+	lastUpdated = 0,
 }
 
 ---@param id number
@@ -19,8 +21,14 @@ function NoteBox:new(id, values)
 	-- Object initialization
 	newObject.id = id
 	newObject.name = values["name"]
-	newObject.path = values["path"]
+	newObject.path = string.sub(values["path"], -1, -1) ~= "/" and values["path"] or string.sub(values["path"], 1, -2)
+	--	newObject.lastUpdated = values["lastUpdated"]
 	return newObject
+end
+
+---@return number
+function NoteBox:getId()
+	return self.id
 end
 
 ---@return string name of the notebox
@@ -31,6 +39,12 @@ end
 ---@return string path of the notebox
 function NoteBox:getPath()
 	return self.path
+end
+
+---@return number date and time of last upadate as UNIX
+--timestamp
+function NoteBox:getLastUpdated()
+	return self.lastUpdated
 end
 
 ---@param values table
@@ -58,7 +72,7 @@ function NoteBox.select(aRow)
 			return NoteBox:new(rowId, row)
 		end
 	end
-	return NoteBox:new(-1, {})
+	return NoteBox:new(-1, aRow)
 end
 
 --- return the NoteBox with the given id
@@ -97,19 +111,30 @@ function NoteBox:insertNote(noteId)
 	return Note:new(rowId, values)
 end
 
----@param noteId string
----@return Note
-function NoteBox:getNoteWithId(noteId)
-	local row = {}
-	row["idNoteBox"] = self.id
-	row["noteId"] = noteId
-	local selectedRows = database.Note.get(row)
-	if #selectedRows == 1 then
-		for rowId, values in pairs(selectedRows) do
-			return Note:new(rowId, values)
+---@return integer number of notes in the note box
+function NoteBox:getNumberOfNotes()
+	return database.Note:count({ idNoteBox = self.id })
+end
+
+---
+---@return table
+function NoteBox:scanForNotes()
+	local findCommand = "find " .. self.path .. ' -name "*.md" -type f -depth 1'
+	if 0 < self:getNumberOfNotes() then
+		findCommand = findCommand .. '-newermt "' .. os.date("%Y-%m-%d %H:%M", self.lastUpdated) .. '"'
+	end
+	local fileList = {}
+	local p = io.popen(findCommand) --Open directory look for files, save data in p. By giving '-type f' as parameter, it returns all files.
+	if p ~= nil then
+		for file in p:lines() do
+			table.insert(fileList, file)
 		end
 	end
-	return Note:new(-1, {})
+	return fileList
+end
+
+function NoteBox:getRelativePath(fileName)
+	return string.gsub(fileName, self.path .. "/", "")
 end
 
 return NoteBox

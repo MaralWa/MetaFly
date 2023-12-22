@@ -1,5 +1,6 @@
+require("MetaFly.model.YamlHeader")
+
 local database = require("MetaFly.model.database")
-local NoteBox = require("MetaFly.model.NoteBox")
 
 ---@class Note
 ---@field private id number
@@ -10,8 +11,8 @@ local NoteBox = require("MetaFly.model.NoteBox")
 ---@field public context string
 ---@field public status string
 ---@field public fileName string
----@field public created string
----@field public lastUpdated string
+---@field public created number
+---@field public lastUpdated number
 ---@field public tags string
 local Note = {
 	id = 0,
@@ -22,13 +23,14 @@ local Note = {
 	context = "",
 	status = "",
 	fileName = "",
-	created = "",
-	lastUpdated = "",
+	created = 0,
+	lastUpdated = 0,
 	tags = "",
 }
 
 ---@param id number
 ---@param values table
+---@return Note
 function Note:new(id, values)
 	local newObject = setmetatable({}, self)
 	self.__index = self
@@ -44,15 +46,55 @@ function Note:new(id, values)
 	newObject.fileName = values["fileName"]
 	newObject.created = values["created"]
 	newObject.lastUpdated = values["lastUpdated"]
-	newObject.taqs = values["tags"]
+	newObject.tags = values["tags"]
 	return newObject
 end
 
----@return NoteBox | nil
-function Note:getNoteBox()
-	return NoteBox.getById(self.idNoteBox)
+---@return number
+function Note:getId()
+	return self.id
 end
 
-function Note:upate() end
+---@return number
+function Note:getIdNoteBox()
+	return self.idNoteBox
+end
+
+---@param idNoteBox number
+---@param noteId string
+---@return Note
+function Note.getNoteWithId(idNoteBox, noteId)
+	local row = {}
+	row["idNoteBox"] = idNoteBox
+	row["noteId"] = noteId
+	local selectedRows = database.Note:get(row)
+	if #selectedRows == 1 then
+		for rowId, values in pairs(selectedRows) do
+			return Note:new(rowId, values)
+		end
+	end
+	return Note:new(-1, row)
+end
+
+---@param values table
+function Note:upate(values)
+	values["lastUpdated"] = os.time()
+	if self.id == -1 then
+		self.id = database.Note:insert(values)
+	else
+		database.Note:update({
+			where = { id = self.id },
+			set = values,
+		})
+	end
+	self.title = values["title"]
+	self.type = values["type"]
+	self.context = values["context"]
+	self.status = values["status"]
+	self.fileName = values["fileName"]
+	self.created = values["created"]
+	self.lastUpdated = values["lastUpdated"]
+	self.tags = values["tags"]
+end
 
 return Note
