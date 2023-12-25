@@ -13,12 +13,18 @@ local NoteData = {
 ---@field private headerLines table
 ---@field private headerData table
 ---@field private warnings table
+---@field private noteData table
+---@field private metaData table
+---@field private mapping table of mapping functions
 local YamlHeader = {
 	fileName = "",
 	bufferNumber = -1,
 	header = {},
 	headerLines = {},
 	warnings = {},
+	mapping = {},
+	noteData = {},
+	metaData = {}
 }
 
 ---@return YamlHeader
@@ -32,6 +38,9 @@ function YamlHeader:new(fileName, bufferNumber)
 	newObject.header = {}
 	newObject.headerLines = {}
 	newObject.warnings = {}
+	newObject.mappings = {}
+	newObject.noteData = {}
+	newObject.metaData = {}
 	return newObject
 end
 
@@ -66,25 +75,19 @@ end
 
 function YamlHeader:parseDocument()
 	self.header = lyaml.load(table.concat(self.headerLines, "\n"))
-end
-
----@return table, table
-function YamlHeader:getMetaDatas()
-	local noteData = {}
-	local metaData = {}
 	for key, value in pairs(self.header) do
 		if NoteData[key] then
-			noteData[key] = value
+			self.noteData[key] = value
 		else
-			metaData[key] = value
+			self.metaData[key] = value
 		end
 	end
-	noteData["noteId"] = self.header["id"]
-	metaData["id"] = nil
-	noteData["tags"] = type(self.header["tags"]) == "table" and table.concat(self.header["tags"], ", ")
+	self.noteData["noteId"] = self.header["id"]
+	self.metaData["id"] = nil
+	self.noteData["tags"] = type(self.header["tags"]) == "table" and table.concat(self.header["tags"], ", ")
 		or noteData["tags"]
-	metaData["tags"] = nil
-	noteData["created"] = os.time({
+	self.metaData["tags"] = nil
+	self.noteData["created"] = os.time({
 		year = string.sub(self.header["date"], 7, 10),
 		month = string.sub(self.header["date"], 4, 5),
 		day = string.sub(self.header["date"], 1, 2),
@@ -92,8 +95,17 @@ function YamlHeader:getMetaDatas()
 		min = string.sub(self.header["date"], 15, 16),
 		sec = 0,
 	})
-	metaData["date"] = nil
-	return noteData, metaData
+	self.metaData["date"] = nil
+end
+
+---@return table
+function YamlHeader:getNoteData()
+	return self.noteData
+end
+
+---@return table
+function YamlHeader:getMetaData()
+	return self.metaData
 end
 
 ---@param bufferNumber number

@@ -6,6 +6,10 @@ local MetaFlyPopUp = require("MetaFly.view.MetaFlyPopUp")
 local YamlHeader = require("MetaFly.model.YamlHeader")
 local TableUtils = require("MetaFly.utils.TableUtils")
 
+local requiredNoteData = {
+	"noteId",
+	"title"
+}
 ---@class SetUpController
 ---@field private popup MetaFlyPopUp
 local SetUpController = {}
@@ -21,14 +25,21 @@ end
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(noteBox, yamlHeader)
 	self.popup:appendLines(yamlHeader:getHeaderLines())
-	local note = Note.getNoteWithId(noteBox:getId(), yamlHeader:getValue("id", ""))
-	local noteData, metaData = yamlHeader:getMetaDatas()
+	yamlHeader:parseDocument()
+	local noteData = yamlHeader:getNoteData
+	local hasRequired, errors = self.hasRequiredData(noteData)
+	if not hasRequired then
+		table.insert(errors, 1, "Cannot update note:")
+		self.popup:appendLines(errors)
+		return
+	end
+	local note = Note.getNoteWithId(noteBox:getId(), noteData["noteId"])
 	if note:getId() == -1 then
 		noteData["fileName"] = noteBox:getRelativePath(yamlHeader:getFileName())
 		self.popup:appendLine("neue Notiz; " .. noteData["fileName"])
 	end
 	note:upate(noteData)
-	for name, value in pairs(metaData) do
+	for name, value in pairs(yamlHeader:getMetaData()) do
 		local metaDataRow = MetaData.getByName(name)
 		self.popup:appendLine("MetaData.id: " .. metaDataRow:getId())
 		local metaDataToNote = MetaDataToNote.get(metaDataRow:getId(), note:getId())
@@ -40,7 +51,20 @@ function SetUpController:updateNote(noteBox, yamlHeader)
 		})
 		metaDataToNote:update(value)
 	end
-	self.popup:appendLine("")
+end
+
+---@param notedata table
+---@return boolean, table
+function SetUpController:hasRequiredData(noteData)
+	local errors = {}
+	local result = true
+	for _, key in ipairs(requiredNoteData) do
+		if note[key] == nil or noteData[key] == "" then
+			result = false
+			table.insert(errors, "- value for " .. key .. "is missing ")
+		end
+	end
+	return result, errors
 end
 
 ---@return table
@@ -76,11 +100,10 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 			if errorMsg ~= nil then
 				self.popup:appendLine(newNote .. ": " .. errorMsg)
 			else
-				yamlHeader:parseDocument()
 				self:updateNote(noteBox, yamlHeader)
 			end
+			self.popup:appendLine("")
 		end
-		self.popup:appendLine("")
 	end
 	return noteBoxes
 end
