@@ -8,8 +8,10 @@ local TableUtils = require("MetaFly.utils.TableUtils")
 
 local requiredNoteData = {
 	"noteId",
-	"title"
+	"title",
+	"created",
 }
+
 ---@class SetUpController
 ---@field private popup MetaFlyPopUp
 local SetUpController = {}
@@ -24,44 +26,65 @@ end
 ---@param noteBox NoteBox
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(noteBox, yamlHeader)
+	self.popup:appendLine("updateNote noteBox: " .. noteBox:getId())
 	self.popup:appendLines(yamlHeader:getHeaderLines())
-	yamlHeader:parseDocument()
-	local noteData = yamlHeader:getNoteData
-	local hasRequired, errors = self.hasRequiredData(noteData)
+	yamlHeader:parseDocument(noteBox)
+	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getHeader()))
+	local noteData = yamlHeader:getNoteData()
+	self.popup:appendLine("Note data from YAML")
+	self.popup:appendLines(TableUtils.convertToLines(noteData))
+	local hasRequired, errors = self:hasRequiredData(noteData)
 	if not hasRequired then
 		table.insert(errors, 1, "Cannot update note:")
 		self.popup:appendLines(errors)
 		return
 	end
-	local note = Note.getNoteWithId(noteBox:getId(), noteData["noteId"])
-	if note:getId() == -1 then
-		noteData["fileName"] = noteBox:getRelativePath(yamlHeader:getFileName())
-		self.popup:appendLine("neue Notiz; " .. noteData["fileName"])
-	end
-	note:upate(noteData)
-	for name, value in pairs(yamlHeader:getMetaData()) do
-		local metaDataRow = MetaData.getByName(name)
-		self.popup:appendLine("MetaData.id: " .. metaDataRow:getId())
-		local metaDataToNote = MetaDataToNote.get(metaDataRow:getId(), note:getId())
-		self.popup:appendLines({
-			"note.id: " .. note:getId(),
-			"metaDataToNote.id: " .. metaDataToNote:getId(),
-			"metaDataToNote.idMetaData: " .. metaDataToNote.idMetaData(),
-			"metaDataToNote.idNote: " .. metaDataToNote.idNote(),
-		})
-		metaDataToNote:update(value)
+	-- self.popup:appendLine("Note Id: " .. noteData["noteId"])
+	-- self.popup:appendLine("Note Box: " .. noteBox:getId())
+	-- local note = Note.getNoteWithId(noteBox:getId(), noteData["noteId"], self.popup)
+	-- if note:getId() == -1 then
+	-- 	noteData["fileName"] = noteBox:getRelativePath(yamlHeader:getFileName())
+	-- 	self.popup:appendLine("neue Notiz; " .. noteData["fileName"])
+	-- 	self.popup:appendLine(" - noteId: " .. note:getNoteId())
+	-- 	self.popup:appendLine(" - idNoteBox: " .. note:getIdNoteBox())
+	-- else
+	-- 	self.popup:appendLine("existierende Notiz: " .. note:getId())
+	-- end
+	self.popup:appendLine("Update values")
+	self.popup:appendLines(TableUtils.convertToLines(noteData))
+	self.popup:appendLine("MetaData:")
+	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getMetaData()))
+	local note = Note.saveValues(noteData, self.popup)
+	if note ~= nil then
+		for name, value in pairs(yamlHeader:getMetaData()) do
+			self.popup:appendLine("  " .. name .. " -> " .. value)
+			local metaDataRow = MetaData.getByName(name)
+			self.popup:appendLine("MetaData.id: " .. metaDataRow:getId())
+			local metaDataToNote = MetaDataToNote.get(metaDataRow:getId(), note:getId())
+			self.popup:appendLines({
+				"note.id: " .. note:getId(),
+				"metaDataToNote.id: " .. metaDataToNote:getId(),
+				"metaDataToNote.idMetaData: " .. metaDataToNote.idMetaData .. " (" .. metaDataRow:getId() .. ")",
+				"metaDataToNote.idNote: " .. metaDataToNote.idNote .. " (" .. note:getId() .. ")",
+			})
+			if type(value) == "string" then
+				metaDataToNote:update(value)
+			else
+				metaDataToNote:update(table.concat(value, ", "))
+			end
+		end
 	end
 end
 
----@param notedata table
+---@param noteData table
 ---@return boolean, table
 function SetUpController:hasRequiredData(noteData)
 	local errors = {}
 	local result = true
 	for _, key in ipairs(requiredNoteData) do
-		if note[key] == nil or noteData[key] == "" then
+		if noteData[key] == nil or noteData[key] == "" then
 			result = false
-			table.insert(errors, "- value for " .. key .. "is missing ")
+			table.insert(errors, "- value for " .. key .. " is missing ")
 		end
 	end
 	return result, errors
@@ -85,6 +108,8 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 		self.popup:appendLine(
 			noteBox:getName()
 				.. ": "
+				.. noteBox:getId()
+				.. " "
 				.. noteBox:getPath()
 				.. "  "
 				.. os.date("%Y-%m-%d %H:%M", noteBox:getLastUpdated())
@@ -96,6 +121,7 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 		local newNotes = noteBox:scanForNotes()
 		self.popup:appendLine("new notes: " .. #newNotes)
 		for index, newNote in ipairs(newNotes) do
+			self.popup:appendLine("Note " .. newNote)
 			local yamlHeader, errorMsg = YamlHeader:getFromFile(newNote)
 			if errorMsg ~= nil then
 				self.popup:appendLine(newNote .. ": " .. errorMsg)

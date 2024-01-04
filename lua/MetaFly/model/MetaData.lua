@@ -10,13 +10,12 @@ local MetaData = {
 	type = "",
 }
 
----@param id number
 ---@param values table
 ---@return (MetaData)
-function MetaData:new(id, values)
+function MetaData:new(values)
 	local newObject = setmetatable({}, self)
 	self.__index = self
-	newObject.id = id
+	newObject.id = values["id"]
 	newObject.name = values["name"]
 	newObject.type = values["type"]
 	return newObject
@@ -33,10 +32,10 @@ end
 ---@param type string | nil
 ---@return MetaData
 function MetaData.getByName(name, type)
-	local metaData = database.Metadata:get({ name = name })
+	local metaData = database.Metadata:get({ where = { name = name } })
 	if #metaData == 1 then
-		for rowId, values in pairs(metaData) do
-			return MetaData:new(rowId, values)
+		for _, values in pairs(metaData) do
+			return MetaData:new(values)
 		end
 	end
 	local inseertValus = {
@@ -46,7 +45,8 @@ function MetaData.getByName(name, type)
 	if type ~= nil then
 	end
 	local id = database.Metadata:insert(inseertValus)
-	return MetaData:new(id, inseertValus)
+	inseertValus.id = id
+	return MetaData:new(inseertValus)
 end
 
 return MetaData

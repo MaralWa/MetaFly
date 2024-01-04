@@ -12,14 +12,13 @@ local NoteBox = {
 	lastUpdated = 0,
 }
 
----@param id number
 ---@param values table
-function NoteBox:new(id, values)
+function NoteBox:new(values)
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
 	-- Object initialization
-	newObject.id = id
+	newObject.id = values["id"]
 	newObject.name = values["name"]
 	newObject.path = string.sub(values["path"], -1, -1) ~= "/" and values["path"] or string.sub(values["path"], 1, -2)
 	--	newObject.lastUpdated = values["lastUpdated"]
@@ -57,7 +56,8 @@ end
 ---@return NoteBox|{ [unknown]: any }
 function NoteBox.insert(row)
 	local id = database.NoteBox:insert(row)
-	return NoteBox:new(id, row)
+	row.id = id
+	return NoteBox:new(row)
 end
 
 ---@param  aRow table
@@ -68,8 +68,8 @@ function NoteBox.select(aRow)
 		where = aRow,
 	})
 	if #selectedNoteBox == 1 then
-		for rowId, row in pairs(selectedNoteBox) do
-			return NoteBox:new(rowId, row)
+		for _, row in pairs(selectedNoteBox) do
+			return NoteBox:new(row)
 		end
 	end
 	return NoteBox:new(-1, aRow)
@@ -80,8 +80,8 @@ end
 function NoteBox.getById(id)
 	selectedNoteBox = database.NoteBox.get(id)
 	if #selectedNoteBox == 1 then
-		for rowId, values in pairs(selectedNoteBox) do
-			return NoteBox:new(rowId, values)
+		for _, values in pairs(selectedNoteBox) do
+			return NoteBox:new(values)
 		end
 	end
 	return nil
@@ -108,7 +108,8 @@ function NoteBox:insertNote(noteId)
 	values["noteId"] = noteId
 	values["idNoteBox"] = self.id
 	local rowId = database.Note.insert(values)
-	return Note:new(rowId, values)
+	values.id = rowId
+	return Note:new(values)
 end
 
 ---@return integer number of notes in the note box
@@ -120,9 +121,9 @@ end
 ---@return table
 function NoteBox:scanForNotes()
 	local findCommand = "find " .. self.path .. ' -name "*.md" -type f -depth 1'
-	if 0 < self:getNumberOfNotes() then
-		findCommand = findCommand .. '-newermt "' .. os.date("%Y-%m-%d %H:%M", self.lastUpdated) .. '"'
-	end
+	--	if 0 < self:getNumberOfNotes() then
+	--		findCommand = findCommand .. '-newermt "' .. os.date("%Y-%m-%d %H:%M", self.lastUpdated) .. '"'
+	--	end
 	local fileList = {}
 	local p = io.popen(findCommand) --Open directory look for files, save data in p. By giving '-type f' as parameter, it returns all files.
 	if p ~= nil then

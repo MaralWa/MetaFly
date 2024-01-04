@@ -1,10 +1,12 @@
 local lyaml = require("lyaml")
+local NoteBox = require("MetaFly.model.NoteBox")
 
 local NoteData = {
-	title = true,
-	type = true,
-	context = true,
-	status = true,
+	title = "title",
+	type = "type",
+	context = "context",
+	status = "status",
+	id = "noteId",
 }
 
 ---@class YamlHeader
@@ -15,7 +17,7 @@ local NoteData = {
 ---@field private warnings table
 ---@field private noteData table
 ---@field private metaData table
----@field private mapping table of mapping functions
+---@field private mappings table of mapping functions
 local YamlHeader = {
 	fileName = "",
 	bufferNumber = -1,
@@ -23,8 +25,15 @@ local YamlHeader = {
 	headerLines = {},
 	warnings = {},
 	mapping = {},
-	noteData = {},
-	metaData = {}
+	noteData = {
+		idNoteBox = "",
+		noteId = "xxxx",
+		type = "note",
+		status = "",
+		context = "",
+		created = os.time(),
+	},
+	metaData = {},
 }
 
 ---@return YamlHeader
@@ -39,7 +48,14 @@ function YamlHeader:new(fileName, bufferNumber)
 	newObject.headerLines = {}
 	newObject.warnings = {}
 	newObject.mappings = {}
-	newObject.noteData = {}
+	newObject.noteData = {
+		idNoteBox = "",
+		noteId = "OOOO",
+		type = "note",
+		status = "",
+		context = "",
+		created = os.time(),
+	}
 	newObject.metaData = {}
 	return newObject
 end
@@ -73,29 +89,40 @@ function YamlHeader:getValue(key, default)
 	return default
 end
 
-function YamlHeader:parseDocument()
+---@param noteBox NoteBox
+function YamlHeader:parseDocument(noteBox)
 	self.header = lyaml.load(table.concat(self.headerLines, "\n"))
 	for key, value in pairs(self.header) do
-		if NoteData[key] then
-			self.noteData[key] = value
+		if NoteData[key] ~= nil then
+			self.noteData[NoteData[key]] = type(value) ~= "table" and "" .. value or table.concat(value, ", ")
 		else
 			self.metaData[key] = value
 		end
 	end
-	self.noteData["noteId"] = self.header["id"]
-	self.metaData["id"] = nil
-	self.noteData["tags"] = type(self.header["tags"]) == "table" and table.concat(self.header["tags"], ", ")
-		or noteData["tags"]
-	self.metaData["tags"] = nil
-	self.noteData["created"] = os.time({
-		year = string.sub(self.header["date"], 7, 10),
-		month = string.sub(self.header["date"], 4, 5),
-		day = string.sub(self.header["date"], 1, 2),
-		hour = string.sub(self.header["date"], 12, 13),
-		min = string.sub(self.header["date"], 15, 16),
-		sec = 0,
-	})
-	self.metaData["date"] = nil
+	self.noteData.idNoteBox = "" .. noteBox:getId()
+	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
+	self.noteData.noteId = "" .. self.header.id
+	--self.metaData.id = nil
+	if self.header.tags ~= nil then
+		if type(self.header.tags) == "table" then
+			self.noteData.tags = #self.header["tags"] > 0 and table.concat(self.header["tags"], ", ") or ""
+		else
+			self.noteData.tags = self.noteData["tags"]
+		end
+		self.metaData.tags = nil
+	end
+	if self.header.date ~= nil then
+		self.noteData.created = ""
+			.. os.time({
+				year = string.sub(self.header["date"], 7, 10),
+				month = string.sub(self.header["date"], 4, 5),
+				day = string.sub(self.header["date"], 1, 2),
+				hour = string.sub(self.header["date"], 12, 13),
+				min = string.sub(self.header["date"], 15, 16),
+				sec = 0,
+			})
+		self.metaData["date"] = nil
+	end
 end
 
 ---@return table
@@ -125,7 +152,6 @@ function YamlHeader:getFromBuffer(bufferNumber)
 		lineNumber = lineNumber + 1
 	until line == "---"
 	yamlHeader:setHeaderLines(headerLines)
-	yamlHeader:parseDocument()
 	return yamlHeader
 end
 
@@ -148,7 +174,6 @@ function YamlHeader:getFromFile(fileName)
 		end
 	end
 	yamlHeader:setHeaderLines(headerLines)
-	yamlHeader:parseDocument()
 	return yamlHeader
 end
 

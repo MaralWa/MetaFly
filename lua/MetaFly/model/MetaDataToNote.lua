@@ -12,11 +12,11 @@ MetaDataToNote = {
 	value = "",
 }
 
-function MetaDataToNote:new(id, row)
+function MetaDataToNote:new(row)
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
-	newObject.id = id
+	newObject.id = row["id"]
 	newObject.idMetaData = row["idMetaData"]
 	newObject.idNote = row["idNote"]
 	newObject.value = row["value"]
@@ -28,17 +28,18 @@ function MetaDataToNote:getId()
 	return self.id
 end
 
----@param idMetaData number
----@param idNote number
+---@param aIdMetaData number
+---@param aIdNote number
 ---@return MetaDataToNote
-function MetaDataToNote:get(idMetaData, idNote)
-	local entry = database.MetadataToNote:get({ idMetaData = idMetaData, idNote = idNote })
-	if #entry == 1 then
-		for rowId, row in pairs(entry) do
-			return MetaDataToNote:new(rowId, row)
+function MetaDataToNote.get(aIdMetaData, aIdNote)
+	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
+	local entries = database.MetadataToNote:get({ where = row })
+	if #entries == 1 then
+		for _, entry in pairs(entries) do
+			return MetaDataToNote:new(entry)
 		end
 	end
-	return MetaDataToNote:new(-1, { idMetaData = idMetaData, idNote = idNote })
+	return MetaDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote })
 end
 
 ---@param value string

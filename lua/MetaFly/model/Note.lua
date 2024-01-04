@@ -1,4 +1,6 @@
 require("MetaFly.model.YamlHeader")
+local MetaFlyPopUp = require("MetaFly.view.MetaFlyPopUp")
+local TableUtils = require("MetaFly.utils.TableUtils")
 
 local database = require("MetaFly.model.database")
 
@@ -28,15 +30,14 @@ local Note = {
 	tags = "",
 }
 
----@param id number
 ---@param values table
 ---@return Note
-function Note:new(id, values)
+function Note:new(values)
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
 	-- Object initialization
-	newObject.id = id
+	newObject.id = values["id"]
 	newObject.idNoteBox = values["idNoteBox"]
 	newObject.noteId = values["noteId"]
 	newObject.title = values["title"]
@@ -60,25 +61,79 @@ function Note:getIdNoteBox()
 	return self.idNoteBox
 end
 
+---@return string
+function Note:getNoteId()
+	return self.noteId
+end
+
 ---@param idNoteBox number
 ---@param noteId string
+---@param popup MetaFlyPopUp | nil
 ---@return Note
-function Note.getNoteWithId(idNoteBox, noteId)
+function Note.getNoteWithId(idNoteBox, noteId, popup)
 	local row = {}
 	row["idNoteBox"] = idNoteBox
 	row["noteId"] = noteId
-	local selectedRows = database.Note:get(row)
+	local selectedRows = database.Note:get({ where = row })
 	if #selectedRows == 1 then
-		for rowId, values in pairs(selectedRows) do
-			return Note:new(rowId, values)
+		for _, values in pairs(selectedRows) do
+			return Note:new(values)
 		end
 	end
-	return Note:new(-1, row)
+	if popup ~= nil then
+		popup:appendLine("Note.getNoteWithId:")
+		popup:appendLines(TableUtils.convertToLines(row))
+	end
+	row.id = -1
+	local newNote = Note:new(row)
+	if popup ~= nil then
+		popup:appendLine(" - " .. newNote:getId())
+		popup:appendLine(" - " .. newNote:getNoteId())
+		popup:appendLine(" - " .. newNote:getIdNoteBox())
+	end
+	return newNote
 end
 
 ---@param values table
-function Note:upate(values)
+---@param popup MetaFlyPopUp | nil
+---@return Note | nil
+function Note.saveValues(values, popup)
+	local row = { idNoteBox = values["idNoteBox"], noteId = values["noteId"] }
+	local selectedRow = database.Note:get({
+		where = row,
+	})
+	if popup ~= nil then
+		popup:appendLine("Note.saveValues:")
+		popup:appendLines(TableUtils.convertToLines(selectedRow))
+	end
+	local idNote = nil
+	local savedNote = nil
+	if #selectedRow == 0 then
+		idNote = database.Note:insert(values)
+		values.id = idNote
+		return Note:new(values)
+	elseif #selectedRow == 1 then
+		for _, rowValues in pairs(selectedRow) do
+			popup:appendLine("rowId: " .. rowValues.id)
+			database.Note:update({
+				where = { id = rowValues.id },
+				set = values,
+			})
+			return Note:new(values)
+		end
+	else
+		return nil
+	end
+end
+
+---@param values table
+---@param popup MetaFlyPopUp | nil
+function Note:upate(values, popup)
 	values["lastUpdated"] = os.time()
+	if popup ~= nil then
+		popup:appendLine("Note.upate:")
+		popup:appendLines(TableUtils.convertToLines(values))
+	end
 	if self.id == -1 then
 		self.id = database.Note:insert(values)
 	else

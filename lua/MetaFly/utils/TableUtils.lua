@@ -6,7 +6,7 @@ TableUtils = {}
 ---@param outTable table
 function TableUtils.printTable(inTable, prefix, outTable)
 	for k, v in pairs(inTable) do
-		if type(v) == "string" then
+		if type(v) ~= "table" then
 			table.insert(outTable, prefix .. k .. " -> " .. v)
 		else
 			if type(v) == "table" then
