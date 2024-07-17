@@ -72,7 +72,7 @@ function NoteBox.select(aRow)
 			return NoteBox:new(row)
 		end
 	end
-	return NoteBox:new(-1, aRow)
+	return NoteBox:new(aRow)
 end
 
 --- return the NoteBox with the given id

@@ -50,7 +50,6 @@ function YamlHeader:new(fileName, bufferNumber)
 	newObject.mappings = {}
 	newObject.noteData = {
 		idNoteBox = "",
-		noteId = "OOOO",
 		type = "note",
 		status = "",
 		context = "",
@@ -101,7 +100,9 @@ function YamlHeader:parseDocument(noteBox)
 	end
 	self.noteData.idNoteBox = "" .. noteBox:getId()
 	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
-	self.noteData.noteId = "" .. self.header.id
+	if self.header.id ~= nil and type(self.header.id) ~= "table" then
+		self.noteData.noteId = "" .. self.header.id
+	end
 	--self.metaData.id = nil
 	if self.header.tags ~= nil then
 		if type(self.header.tags) == "table" then

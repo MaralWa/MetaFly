@@ -114,7 +114,6 @@ function Note.saveValues(values, popup)
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
-			popup:appendLine("rowId: " .. rowValues.id)
 			database.Note:update({
 				where = { id = rowValues.id },
 				set = values,
