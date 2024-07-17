@@ -88,6 +88,24 @@ function YamlHeader:getValue(key, default)
 	return default
 end
 
+---@return string | nil
+function YamlHeader:getTitle()
+	-- use Titel as title if pesent
+	if self.header.Titel ~= nil and type(self.header.Titel) ~= "table" then
+		return self.header.Titel
+	end
+	-- use first alias as title if any aliases are defined
+	if self.header.aliases ~= nil and type(self.header.aliases) == "table" then
+		for key, value in pairs(self.header.aliases) do
+			if type(value) ~= "table" then
+				return value
+			end
+		end
+	end
+	--
+	return nil
+end
+
 ---@param noteBox NoteBox
 function YamlHeader:parseDocument(noteBox)
 	self.header = lyaml.load(table.concat(self.headerLines, "\n"))
@@ -98,10 +116,16 @@ function YamlHeader:parseDocument(noteBox)
 			self.metaData[key] = value
 		end
 	end
+	if self.noteData.title == nil or self.noteData.title == "" then
+		self.noteData.title = self.getTitle(self)
+	end
 	self.noteData.idNoteBox = "" .. noteBox:getId()
 	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
 	if self.header.id ~= nil and type(self.header.id) ~= "table" then
 		self.noteData.noteId = "" .. self.header.id
+	end
+	if self.noteData.noteId == nil and self.noteData.title ~= nil then
+		self.noteData.noteId = self.noteData.title
 	end
 	--self.metaData.id = nil
 	if self.header.tags ~= nil then
@@ -123,6 +147,8 @@ function YamlHeader:parseDocument(noteBox)
 				sec = 0,
 			})
 		self.metaData["date"] = nil
+	else
+		self.noteData.created = "" .. os.time()
 	end
 end
 
