@@ -23,12 +23,17 @@ function SetUpController:new()
 	return newObject
 end
 
+---@param note Note
+function SetUpController:logNote(note)
+	logMsg = "Notiz - logNote: " .. note:getId() .. ", " .. note.title .. ", " .. note.fileName
+	self.popup:appendLines({ logMsg })
+end
+
 ---@param fileName string
----@param noteBox any
----@param yamlHeader any
 ---@param noteBox NoteBox
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(fileName, noteBox, yamlHeader)
+	self.popup:appendLines({ "Notiz - updateNote: " .. fileName })
 	yamlHeader:parseDocument(noteBox)
 	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getHeader()))
 	local noteData = yamlHeader:getNoteData()
@@ -57,6 +62,7 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 	--	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getMetaData()))
 	local note = Note.saveValues(noteData, nil)
 	if note ~= nil then
+		self:logNote(note)
 		for name, value in pairs(yamlHeader:getMetaData()) do
 			--			self.popup:appendLine("  " .. name .. " -> " .. value)
 			local metaDataRow = MetaData.getByName(name)
@@ -104,6 +110,9 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 			or string.sub(noteBoxConfig["path"], 1, -2)
 		self.popup:appendLines(TableUtils.convertToLines(noteBoxConfig))
 		local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
+		local idNoteBox = noteBox:getId()
+		local whereNotes = {}
+		whereNotes["idNoteBox"] = idNoteBox
 		self.popup:appendLine(
 			noteBox:getName()
 				.. ": "
@@ -111,24 +120,27 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 				.. " "
 				.. noteBox:getPath()
 				.. "  "
-				.. os.date("%Y-%m-%d %H:%M", noteBox:getLastUpdated())
+				--.. os.date("%Y-%m-%d %H:%M", noteBox:getLastUpdated())
+				.. noteBox:getLastUpdated()
 				.. "  "
-				.. noteBox:getNumberOfNotes()
+				.. Note.count(whereNotes, self.popup)
 				.. " notes "
 		)
 		noteBoxes[noteBoxPath] = noteBox
-		local newNotes = noteBox:scanForNotes()
+		local findCommand, newNotes = noteBox:scanForNotes()
+		self.popup:appendLine(findCommand)
 		self.popup:appendLine("new notes: " .. #newNotes)
 		for index, newNote in ipairs(newNotes) do
 			self.popup:appendLine("Note " .. newNote)
 			local yamlHeader, errorMsg = YamlHeader:getFromFile(newNote)
 			if errorMsg ~= nil then
-				self.popup:appendLine(newNote .. ": " .. errorMsg)
+				self.popup:appendLine("Notiz - errors:" .. newNote .. ": " .. errorMsg)
 			else
 				self:updateNote(newNote, noteBox, yamlHeader)
 			end
 			self.popup:appendLine("")
 		end
+		noteBox:markAsUpdated()
 	end
 	return noteBoxes
 end

@@ -4,12 +4,12 @@ local database = require("MetaFly.model.database")
 ---@field private id number
 ---@field private path string
 ---@field private name string
----@field private lastUpdated number
+---@field private lastUpdated string
 local NoteBox = {
 	id = 0,
 	path = "",
 	name = "",
-	lastUpdated = 0,
+	lastUpdated = "",
 }
 
 ---@param values table
@@ -21,7 +21,7 @@ function NoteBox:new(values)
 	newObject.id = values["id"]
 	newObject.name = values["name"]
 	newObject.path = string.sub(values["path"], -1, -1) ~= "/" and values["path"] or string.sub(values["path"], 1, -2)
-	--	newObject.lastUpdated = values["lastUpdated"]
+	newObject.lastUpdated = values["lastUpdated"]
 	return newObject
 end
 
@@ -40,7 +40,7 @@ function NoteBox:getPath()
 	return self.path
 end
 
----@return number date and time of last upadate as UNIX
+---@return string date and time of last upadate as UNIX
 --timestamp
 function NoteBox:getLastUpdated()
 	return self.lastUpdated
@@ -48,7 +48,13 @@ end
 
 ---@param values table
 function NoteBox:upadate(values)
-	database.NoteBox:update({ values, id = self.id })
+	database.NoteBox:update({ where = { id = self.id }, set = values })
+end
+
+function NoteBox:markAsUpdated()
+	local values = {}
+	values["lastUpdated"] = os.date("%Y-%m-%d %X")
+	self:upadate(values)
 end
 
 --- Intert an entry in table NoteBox
@@ -75,6 +81,7 @@ function NoteBox.select(aRow)
 	return NoteBox:new(aRow)
 end
 
+function NoteBox:u() end
 --- return the NoteBox with the given id
 ---@param id number
 function NoteBox.getById(id)
@@ -112,18 +119,17 @@ function NoteBox:insertNote(noteId)
 	return Note:new(values)
 end
 
----@return integer number of notes in the note box
 function NoteBox:getNumberOfNotes()
-	return database.Note:count({ idNoteBox = self.id })
+	local selectedRows = database.Note:get({ where = { idNoteBox = self.id } })
+	return #selectedRows
 end
-
 ---
----@return table
+---@return string, table
 function NoteBox:scanForNotes()
 	local findCommand = "find " .. self.path .. ' -name "*.md" -type f -depth 1'
-	--	if 0 < self:getNumberOfNotes() then
-	--		findCommand = findCommand .. '-newermt "' .. os.date("%Y-%m-%d %H:%M", self.lastUpdated) .. '"'
-	--	end
+	if 0 < self:getNumberOfNotes() then
+		findCommand = findCommand .. ' -newermt "' .. self.lastUpdated .. '"'
+	end
 	local fileList = {}
 	local p = io.popen(findCommand) --Open directory look for files, save data in p. By giving '-type f' as parameter, it returns all files.
 	if p ~= nil then
@@ -131,7 +137,7 @@ function NoteBox:scanForNotes()
 			table.insert(fileList, file)
 		end
 	end
-	return fileList
+	return findCommand, fileList
 end
 
 function NoteBox:getRelativePath(fileName)
