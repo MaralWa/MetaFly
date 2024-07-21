@@ -1,7 +1,8 @@
 local sqlite = require("sqlite.db")
 local tbl = require("sqlite.tbl")
 
-local julianday, strftime = sqlite.lib.julianday, sqlite.lib.strftime
+local strftime = sqlite.lib.strftime
+local datetime = sqlite.lib.datetime
 
 local database = {
 	uri = "",
@@ -60,22 +61,22 @@ database.NoteBox = tbl("NoteBox", {
 	id = true,
 	name = { "text", required = true },
 	path = { "text", required = true, unique = true },
-	lastUpdated = { "date", default = strftime("%s", "now"), required = true },
+	lastUpdated = { "text", default = datetime("now"), required = true },
 })
 
 ---@class NoteTable
 database.Note = tbl("Note", {
 	id = true,
-	noteId = { "text", required = true, unique = true },
+	noteId = { "text", required = true },
 	title = { "text", required = true },
 	type = { "text" },
 	context = { "text" },
 	status = { "text" },
 	tags = { "text" },
-	fileName = { "text", required = true, unique = true },
-	idNoteBox = { reference = "NoteBox.id" },
-	created = { "date", default = strftime("%s", "now"), required = true },
-	lastUpdated = { "date", default = strftime("%s", "now"), required = true },
+	fileName = { "text", required = true },
+	idNoteBox = { "integer", reference = "NoteBox.id" },
+	created = { "text", default = datetime("now"), required = true },
+	lastUpdated = { "text", default = datetime("now"), required = true },
 })
 
 ---@class Metadata
