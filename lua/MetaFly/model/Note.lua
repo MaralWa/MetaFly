@@ -66,6 +66,14 @@ function Note:getNoteId()
 	return self.noteId
 end
 
+---@param pWhere  table
+---@param pPopup MetaFlyPopUp | nil
+---@return integer
+function Note.count(pWhere, pPopup)
+	local selectedRows = database.Note:get({ where = pWhere })
+	return #selectedRows
+end
+
 ---@param idNoteBox number
 ---@param noteId string
 ---@param popup MetaFlyPopUp | nil
