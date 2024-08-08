@@ -126,6 +126,7 @@ function Note.saveValues(values, popup)
 				where = { id = rowValues.id },
 				set = values,
 			})
+			values.id = rowValues.id
 			return Note:new(values)
 		end
 	else

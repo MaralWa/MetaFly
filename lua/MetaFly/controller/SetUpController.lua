@@ -37,43 +37,18 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 	yamlHeader:parseDocument(noteBox)
 	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getHeader()))
 	local noteData = yamlHeader:getNoteData()
-	--	self.popup:appendLine("Note data from YAML")
-	--	self.popup:appendLines(TableUtils.convertToLines(noteData))
 	local hasRequired, errors = self:hasRequiredData(noteData)
 	if not hasRequired then
 		table.insert(errors, 1, "Cannot update note:" .. fileName)
 		self.popup:appendLines(errors)
 		return
 	end
-	-- self.popup:appendLine("Note Id: " .. noteData["noteId"])
-	-- self.popup:appendLine("Note Box: " .. noteBox:getId())
-	-- local note = Note.getNoteWithId(noteBox:getId(), noteData["noteId"], self.popup)
-	-- if note:getId() == -1 then
-	-- 	noteData["fileName"] = noteBox:getRelativePath(yamlHeader:getFileName())
-	-- 	self.popup:appendLine("neue Notiz; " .. noteData["fileName"])
-	-- 	self.popup:appendLine(" - noteId: " .. note:getNoteId())
-	-- 	self.popup:appendLine(" - idNoteBox: " .. note:getIdNoteBox())
-	-- else
-	-- 	self.popup:appendLine("existierende Notiz: " .. note:getId())
-	-- end
-	--	self.popup:appendLine("Update values")
-	--	self.popup:appendLines(TableUtils.convertToLines(noteData))
-	--	self.popup:appendLine("MetaData:")
-	--	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getMetaData()))
-	local note = Note.saveValues(noteData, nil)
+	local note = Note.saveValues(noteData, self.popup)
 	if note ~= nil then
 		self:logNote(note)
 		for name, value in pairs(yamlHeader:getMetaData()) do
-			--			self.popup:appendLine("  " .. name .. " -> " .. value)
 			local metaDataRow = MetaData.getByName(name)
-			--			self.popup:appendLine("MetaData.id: " .. metaDataRow:getId())
 			local metaDataToNote = MetaDataToNote.get(metaDataRow:getId(), note:getId())
-			--			self.popup:appendLines({
-			--				"note.id: " .. note:getId(),
-			--				"metaDataToNote.id: " .. metaDataToNote:getId(),
-			--				"metaDataToNote.idMetaData: " .. metaDataToNote.idMetaData .. " (" .. metaDataRow:getId() .. ")",
-			--				"metaDataToNote.idNote: " .. metaDataToNote.idNote .. " (" .. note:getId() .. ")",
-			--			})
 			if type(value) == "string" then
 				metaDataToNote:update(value)
 			else
