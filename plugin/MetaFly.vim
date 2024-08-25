@@ -5,7 +5,7 @@ if exists("g:loaded_metafly")
     finish
 endif
 
-
+command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notes()
 
 let g:loaded_metafly = 1
 
