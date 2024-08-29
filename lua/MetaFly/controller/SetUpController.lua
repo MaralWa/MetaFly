@@ -34,9 +34,12 @@ end
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 	self.popup:appendLines({ "Notiz - updateNote: " .. fileName })
-	yamlHeader:parseDocument(noteBox)
+	local noteData = yamlHeader:parseDocument(noteBox)
+	if noteData == nil then
+		self.popup:appendLine("Could not get noteData from header")
+		return
+	end
 	self.popup:appendLines(TableUtils.convertToLines(yamlHeader:getHeader()))
-	local noteData = yamlHeader:getNoteData()
 	local hasRequired, errors = self:hasRequiredData(noteData)
 	if not hasRequired then
 		table.insert(errors, 1, "Cannot update note:" .. fileName)
