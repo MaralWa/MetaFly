@@ -108,6 +108,9 @@ end
 
 ---@param noteBox NoteBox
 function YamlHeader:parseDocument(noteBox)
+	if self.headerLines == nil then
+		return nil
+	end
 	self.header = lyaml.load(table.concat(self.headerLines, "\n"))
 	for key, value in pairs(self.header) do
 		if NoteData[key] ~= nil then
@@ -150,6 +153,7 @@ function YamlHeader:parseDocument(noteBox)
 	else
 		self.noteData.created = "" .. os.time()
 	end
+	return self.noteData
 end
 
 ---@return table
@@ -174,7 +178,7 @@ function YamlHeader:getFromBuffer(bufferNumber)
 	end
 	local headerLines = { line }
 	repeat
-		local line = vim.fn.getbufoneline(bufferNumber, lineNumber)
+		line = vim.fn.getbufoneline(bufferNumber, lineNumber)
 		table.insert(headerLines, line)
 		lineNumber = lineNumber + 1
 	until line == "---"
