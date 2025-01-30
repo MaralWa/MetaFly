@@ -1,5 +1,4 @@
 local YamlHeader = require("MetaFly.model.YamlHeader")
-local MetaFly = require("MetaFly.")
 
 local BufferController = {}
 

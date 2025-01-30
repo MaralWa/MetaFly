@@ -1,4 +1,4 @@
-local lyaml = require("lyaml")
+local lyaml = require("yaml")
 local NoteBox = require("MetaFly.model.NoteBox")
 
 local NoteData = {
@@ -153,6 +153,7 @@ function YamlHeader:parseDocument(noteBox)
 	else
 		self.noteData.created = "" .. os.time()
 	end
+	return self.noteData
 end
 
 ---@return table
