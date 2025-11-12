@@ -5,7 +5,9 @@ if exists("g:loaded_metafly")
     finish
 endif
 
-command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notes()
+command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
+command! MetaFlyView lua require('MetaFly.picker.NotePicker').notesView("/Users/sarah/Documents/MetaFly/views/Gwallore.yml")
+command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
 
 let g:loaded_metafly = 1
 

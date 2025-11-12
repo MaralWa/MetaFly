@@ -117,7 +117,7 @@ function Note.saveValues(values, popup)
 	local idNote = nil
 	local savedNote = nil
 	if #selectedRow == 0 then
-		idNote = database.Note:insert(values)
+		idNote = database():insertNote(values)
 		values.id = idNote
 		return Note:new(values)
 	elseif #selectedRow == 1 then

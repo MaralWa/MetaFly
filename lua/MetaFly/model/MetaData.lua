@@ -32,7 +32,8 @@ end
 ---@param type string | nil
 ---@return MetaData
 function MetaData.getByName(name, type)
-	local metaData = database.Metadata:get({ where = { name = name } })
+	local sqlite = database:getInstacne():getSqlite()
+	local metaData = sqlite.Metadata:get({ where = { name = name } })
 	if #metaData == 1 then
 		for _, values in pairs(metaData) do
 			return MetaData:new(values)
@@ -42,9 +43,7 @@ function MetaData.getByName(name, type)
 		name = name,
 		type = type ~= nil and type or "",
 	}
-	if type ~= nil then
-	end
-	local id = database.Metadata:insert(inseertValus)
+	local id = sqlite.Metadata:insert(inseertValus)
 	inseertValus.id = id
 	return MetaData:new(inseertValus)
 end

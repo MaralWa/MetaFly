@@ -4,17 +4,26 @@ local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 
-local MetaFlyPopUp = require("MetaFly.view.MetaFlyPopUp")
-local TableUtils = require("MetaFly/utils/TableUtils")
+local MetaFlyView = require("MetaFly/model/MetaFlyView")
 
 NotePiker = {}
 
--- our picker function: colors
-NotePiker.notes = function(opts)
-	-- local popup = MetaFlyPopUp:new()
-	local sqlResult = io.popen(
-		"echo \"select Note.title, NoteBox.path || '/' || Note.fileName  from Note, NoteBox where Note.idNoteBox = NoteBox.id;\" | sqlite3 ~/Documents/vimwiki/MetaFly/metadata.db -csv"
-	)
+---@param fileName string, nil
+NotePiker.notesView = function(fileName)
+	local pickerView = nil
+	if fileName ~= nil then
+		pickerView = MetaFlyView:readFromFile(fileName)
+	else
+		pickerView = MetaFlyView.DefaultPicker
+	end
+
+	local options = {}
+	NotePiker.notes(pickerView, options)
+end
+
+NotePiker.notes = function(pickerView, opts)
+	local database = require("MetaFly.model.database"):getInstance()
+	local sqlResult = database:callSql(pickerView:getSelectStatement(), pickerView.sqlMode)
 	local notesTable = {}
 	if sqlResult ~= nil then
 		for line in sqlResult:lines() do
@@ -22,7 +31,8 @@ NotePiker.notes = function(opts)
 			table.insert(notesTable, { title:gsub('"', ""), fileName:gsub('"', "") })
 		end
 	end
-	opts = opts or {}
+	opts = opts and opts or {}
+	-- local opts = {}
 	pickers
 		.new(opts, {
 			prompt_title = "notes",
@@ -41,11 +51,20 @@ NotePiker.notes = function(opts)
 			sorter = conf.generic_sorter(opts),
 			previewer = conf.file_previewer(opts),
 			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
+				local function open_file()
 					local selection = action_state.get_selected_entry()
+					actions.close(prompt_bufnr)
 					vim.cmd.edit(selection.value[2])
-				end)
+				end
+
+				map("i", "<CR>", open_file)
+				map("n", "<CR>", open_file)
+
+				-- actions.select_default:replace(function()
+				-- 	local selection = action_state.get_selected_entry()
+				-- 	actions.close(prompt_bufnr)
+				-- 	vim.cmd.edit(selection.value[2])
+				-- end)
 				return true
 			end,
 		})
