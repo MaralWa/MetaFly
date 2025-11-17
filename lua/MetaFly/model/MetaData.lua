@@ -32,7 +32,7 @@ end
 ---@param type string | nil
 ---@return MetaData
 function MetaData.getByName(name, type)
-	local sqlite = database:getInstacne():getSqlite()
+	local sqlite = database:getInstance():getSqlite()
 	local metaData = sqlite.Metadata:get({ where = { name = name } })
 	if #metaData == 1 then
 		for _, values in pairs(metaData) do

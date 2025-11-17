@@ -1,6 +1,6 @@
 require("MetaFly.model.YamlHeader")
-local MetaFlyPopUp = require("MetaFly.view.MetaFlyPopUp")
-local TableUtils = require("MetaFly.utils.TableUtils")
+
+local logger = require("MetaFly.config"):getInstance():getLogger()
 
 local database = require("MetaFly.model.database")
 
@@ -67,18 +67,16 @@ function Note:getNoteId()
 end
 
 ---@param pWhere  table
----@param pPopup MetaFlyPopUp | nil
 ---@return integer
-function Note.count(pWhere, pPopup)
+function Note.count(pWhere)
 	local selectedRows = database.Note:get({ where = pWhere })
 	return #selectedRows
 end
 
 ---@param idNoteBox number
 ---@param noteId string
----@param popup MetaFlyPopUp | nil
 ---@return Note
-function Note.getNoteWithId(idNoteBox, noteId, popup)
+function Note.getNoteWithId(idNoteBox, noteId)
 	local row = {}
 	row["idNoteBox"] = idNoteBox
 	row["noteId"] = noteId
@@ -88,41 +86,34 @@ function Note.getNoteWithId(idNoteBox, noteId, popup)
 			return Note:new(values)
 		end
 	end
-	if popup ~= nil then
-		popup:appendLine("Note.getNoteWithId:")
-		popup:appendLines(TableUtils.convertToLines(row))
-	end
 	row.id = -1
 	local newNote = Note:new(row)
-	if popup ~= nil then
-		popup:appendLine(" - " .. newNote:getId())
-		popup:appendLine(" - " .. newNote:getNoteId())
-		popup:appendLine(" - " .. newNote:getIdNoteBox())
-	end
 	return newNote
 end
 
 ---@param values table
----@param popup MetaFlyPopUp | nil
 ---@return Note | nil
-function Note.saveValues(values, popup)
+function Note.saveValues(values)
+	logger:debug("Saving note data")
+	logger:debug(table)
+	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
+	if not sqlite then
+		logger:debug("Failed to get sqlite instance")
+		return nil
+	end
 	local row = { idNoteBox = values["idNoteBox"], noteId = values["noteId"] }
-	local selectedRow = database.Note:get({
+	local selectedRow = sqlite.Note:get({
 		where = row,
 	})
-	if popup ~= nil then
-		popup:appendLine("Note.saveValues:")
-		popup:appendLines(TableUtils.convertToLines(selectedRow))
-	end
 	local idNote = nil
-	local savedNote = nil
 	if #selectedRow == 0 then
-		idNote = database():insertNote(values)
+		idNote = sqlite.Note:insert(values)
+
 		values.id = idNote
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
-			database.Note:update({
+			sqlite.Note:update({
 				where = { id = rowValues.id },
 				set = values,
 			})
@@ -135,17 +126,13 @@ function Note.saveValues(values, popup)
 end
 
 ---@param values table
----@param popup MetaFlyPopUp | nil
-function Note:upate(values, popup)
+function Note:upate(values)
+	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	values["lastUpdated"] = os.time()
-	if popup ~= nil then
-		popup:appendLine("Note.upate:")
-		popup:appendLines(TableUtils.convertToLines(values))
-	end
 	if self.id == -1 then
-		self.id = database.Note:insert(values)
+		self.id = sqlite.Note:insert(values)
 	else
-		database.Note:update({
+		sqlite.Note:update({
 			where = { id = self.id },
 			set = values,
 		})

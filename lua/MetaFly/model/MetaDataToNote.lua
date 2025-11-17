@@ -1,5 +1,7 @@
 local database = require("MetaFly.model.database")
 
+local logger = require("MetaFly.config"):getInstance():getLogger()
+
 ---@class MetaDataToNote
 ---@field private id number
 ---@field  idMetaData number
@@ -20,7 +22,6 @@ function MetaDataToNote:new(row)
 	newObject.idMetaData = row["idMetaData"]
 	newObject.idNote = row["idNote"]
 	newObject.value = row["value"]
-	newObject.sqlite = database:getInstance():getSqlite()
 	return newObject
 end
 
@@ -33,7 +34,7 @@ end
 ---@param aIdNote number
 ---@return MetaDataToNote
 function MetaDataToNote.get(aIdMetaData, aIdNote)
-	local sqlite = database:getInstance():getSqlite()
+	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
 	local entries = sqlite.MetadataToNote:get({ where = row })
 	if #entries == 1 then
@@ -46,8 +47,9 @@ end
 
 ---@param value string
 function MetaDataToNote:update(value)
+	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	if self.id == -1 then
-		local rowId = self.sqlite.MetadataToNote:insert({
+		local rowId = sqlite.MetadataToNote:insert({
 			idMetaData = self.idMetaData,
 			idNote = self.idNote,
 			value = value,

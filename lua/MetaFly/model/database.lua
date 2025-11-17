@@ -74,10 +74,10 @@ function database:init(config)
 	end
 	self.DB = sqlite({
 		uri = self.uri,
-		noteBox = self.NoteBox,
-		note = self.Note,
-		metaData = self.Metadata,
-		metadataToNote = self.MetadataToNote,
+		NoteBox = self.NoteBox,
+		Note = self.Note,
+		Metadata = self.Metadata,
+		MetadataToNote = self.MetadataToNote,
 		opt = {},
 	})
 end

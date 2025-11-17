@@ -17,8 +17,8 @@ function MetaFly.setup(opts)
 	local db = Database:getInstance()
 	db:init(MetaFly.config)
 	print("MetaFly init: " .. db:getUri())
-	-- local setUpController = SetUpController:new()
-	-- MetaFly.noteBoxes = setUpController:scanNoteBoxes(opts["noteBoxes"])
+	local setUpController = SetUpController:new()
+	MetaFly.noteBoxes = setUpController:scanNoteBoxes(opts["noteBoxes"])
 end
 
 return MetaFly
