@@ -8,7 +8,14 @@ function NotesIterator:new(root, maxdepth)
 	local obj = setmetatable({}, self)
 	obj.root = root
 	obj.maxdepth = maxdepth or math.huge
-	obj.stack = { { dir = root, depth = 0, iter = lfs.dir(root) } }
+	local rootIterator, rootState, rootEntry = lfs.dir(root)
+	obj.stack = { {
+		dir = root,
+		depth = 0,
+		iterator = rootIterator,
+		state = rootState,
+		entry = rootEntry,
+	} }
 	return obj
 end
 
@@ -33,33 +40,29 @@ end
 function NotesIterator:next()
 	while #self.stack > 0 do
 		local top = self.stack[#self.stack]
-		local entry = top.iter()
+		local entry = top.iterator(top.state, top.entry)
 
 		if entry == nil then
 			table.remove(self.stack)
-		else
-			if entry ~= "." and entry ~= ".." then
-				local full = top.dir .. "/" .. entry
+		elseif entry ~= "." and entry ~= ".." and entry ~= ".git" then
+			local full = top.dir .. "/" .. entry
 
-				-- .git Ordner explizit überspringen
-				if entry == ".git" then
-					-- continue
-				else
-					local attr = lfs.attributes(full)
-					if attr then
-						if attr.mode == "directory" then
-							-- neue Ebene pushen
-							if top.depth < self.maxdepth then
-								table.insert(self.stack, {
-									dir = full,
-									depth = top.depth + 1,
-									iter = lfs.dir(full),
-								})
-							end
-						elseif attr.mode == "file" and is_markdown(entry) then
-							return make_info(full, attr)
-						end
+			local attr = lfs.attributes(full)
+			if attr then
+				if attr.mode == "directory" then
+					-- neue Ebene pushen
+					local newIter, newState, newEntry = lfs.dir(full)
+					if top.depth < self.maxdepth then
+						table.insert(self.stack, {
+							dir = full,
+							depth = top.depth + 1,
+							iterator = newIter,
+							state = newState,
+							entry = newEntry,
+						})
 					end
+				elseif attr.mode == "file" and is_markdown(entry) then
+					return make_info(full, attr)
 				end
 			end
 		end
@@ -75,4 +78,4 @@ local function markdown_files(root, maxdepth)
 	return NotesIterator:new(root, maxdepth)
 end
 
-return NotesIterator
+notes = markdown_files("/Users/sarah/Documents/vimwiki", 2)
