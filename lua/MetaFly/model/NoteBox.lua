@@ -1,4 +1,5 @@
 local database = require("MetaFly.model.database")
+local Note = require("MetaFly.model.Note")
 
 ---@class NoteBox
 ---@field private id number
@@ -46,6 +47,22 @@ function NoteBox:getLastUpdated()
 	return self.lastUpdated
 end
 
+---@return number UNIX timestamp of last update
+function NoteBox:getLastUpdatedTimeStamp()
+	local year, month, day, hour, min, sec = self.lastUpdated:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
+	local timeTable = {
+		year = tonumber(year),
+		month = tonumber(month),
+		day = tonumber(day),
+		hour = tonumber(hour),
+		min = tonumber(min),
+		sec = tonumber(sec),
+	}
+
+	-- Umwandeln in Unix-Zeitstempel
+	return os.time(timeTable)
+end
+
 ---@param values table
 function NoteBox:upadate(values)
 	database.NoteBox:update({ where = { id = self.id }, set = values })
@@ -81,11 +98,10 @@ function NoteBox.select(aRow)
 	return NoteBox:new(aRow)
 end
 
-function NoteBox:u() end
 --- return the NoteBox with the given id
 ---@param id number
 function NoteBox.getById(id)
-	selectedNoteBox = database.NoteBox.get(id)
+	local selectedNoteBox = database.NoteBox.get(id)
 	if #selectedNoteBox == 1 then
 		for _, values in pairs(selectedNoteBox) do
 			return NoteBox:new(values)
@@ -95,9 +111,13 @@ function NoteBox.getById(id)
 end
 
 ---comment
----@param row table
+---@param noteBoxconfig table
 ---@return NoteBox
-function NoteBox.selectOrInsertNoteBox(row)
+function NoteBox.selectOrInsertNoteBox(noteBoxconfig)
+	local row = {
+		name = noteBoxconfig.name,
+		path = noteBoxconfig.path,
+	}
 	local noteBox = NoteBox.select(row)
 	if noteBox.id > 0 then
 		return noteBox

@@ -1,5 +1,4 @@
 local lyaml = require("lyaml")
-local NoteBox = require("MetaFly.model.NoteBox")
 
 local NoteData = {
 	title = "title",
