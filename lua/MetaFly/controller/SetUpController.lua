@@ -1,15 +1,16 @@
+local Scanner = require("plenary.scandir")
 local Config = require("MetaFly.config")
 local NoteBox = require("MetaFly.model.NoteBox")
 local Note = require("MetaFly.model.Note")
 local MetaData = require("MetaFly.model.MetaData")
 local MetaDataToNote = require("MetaFly.model.MetaDataToNote")
 local YamlHeader = require("MetaFly.model.YamlHeader")
-local TableUtils = require("MetaFly.utils.TableUtils")
+local NotesIterator = require("MetaFly.utils.NotesIterator")
+local utils = require("MetaFly.utils.utils")
 
 local requiredNoteData = {
 	"noteId",
 	"title",
-	"created",
 }
 
 local logger = Config:getInstance():getLogger()
@@ -33,10 +34,14 @@ end
 ---@param noteBox NoteBox
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(fileName, noteBox, yamlHeader)
-	logger:debug("Updating note " .. fileName)
+	logger:info("Updating note " .. fileName)
 	local noteData = yamlHeader:parseDocument(noteBox)
 	if noteData == nil then
 		return
+	end
+	if noteData.title == nil or noteData.title == "" then
+		logger:debug("Using fileName as title: " .. fileName)
+		noteData.title = utils.getFileNameWithoutExtension(fileName)
 	end
 	local hasRequired, errors = self:hasRequiredData(noteData)
 	if not hasRequired then
@@ -73,29 +78,47 @@ function SetUpController:hasRequiredData(noteData)
 	return result, errors
 end
 
+-- @param noteboxConfig configuration for single notebox
+function SetUpController:scanNoteBox(noteBoxConfig)
+	local notesIterator = NotesIterator:new(noteBoxConfig)
+	local noteBox, noteBoxinserted = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
+	local lastUpdated = noteBox:getLastUpdatedTimeStamp()
+	local note = notesIterator:next()
+	while note ~= nil do
+		logger:info("Found note: " .. note.path)
+		if false and not noteBoxinserted and note.modified < lastUpdated then
+			logger:debug("Skipping note " .. note.path .. " because it was not modified since last scan.")
+			print("Note was not modified since last scan.")
+		else
+			local yamlHeader, errorMsg = YamlHeader:getFromFile(note.path)
+			if errorMsg ~= nil then
+				logger:debug("Cannot read YAML header from note: " .. note.path .. " because of error: " .. errorMsg)
+			else
+				self:updateNote(note.path, noteBox, yamlHeader)
+			end
+		end
+		note = notesIterator:next()
+	end
+	noteBox:markAsUpdated()
+	return noteBox
+end
+
 ---@return table
 ---@param noteboxConfigs table
 function SetUpController:scanNoteBoxes(noteboxConfigs)
 	local noteBoxes = {}
-	for index, noteBoxConfig in pairs(noteboxConfigs) do
+	for _, noteBoxConfig in pairs(noteboxConfigs) do
 		logger:debug("NoteBox " .. noteBoxConfig["name"])
 		local noteBoxName = noteBoxConfig["name"]
 		local noteBoxPath = string.sub(noteBoxConfig["path"], -1, -1) ~= "/" and noteBoxConfig["path"]
 			or string.sub(noteBoxConfig["path"], 1, -2)
 		local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
+		logger:debug("NoteBox ID " .. noteBox:getId())
+		logger:debug("NoteBox lastUpdated " .. noteBox.lastUpdated)
 		local idNoteBox = noteBox:getId()
 		local whereNotes = {}
 		whereNotes["idNoteBox"] = idNoteBox
-		noteBoxes[noteBoxPath] = noteBox
-		local findCommand, newNotes = noteBox:scanForNotes()
-		for index, newNote in ipairs(newNotes) do
-			local yamlHeader, errorMsg = YamlHeader:getFromFile(newNote)
-			if errorMsg ~= nil then
-			else
-				self:updateNote(newNote, noteBox, yamlHeader)
-			end
-		end
-		noteBox:markAsUpdated()
+		noteBoxes[noteBoxPath] = self:scanNoteBox(noteBoxConfig)
 	end
 	return noteBoxes
 end

@@ -113,6 +113,8 @@ end
 ---comment
 ---@param noteBoxconfig table
 ---@return NoteBox
+---@return boolean inserted true if a new NoteBox was
+---inserted, false if an existing one was selected
 function NoteBox.selectOrInsertNoteBox(noteBoxconfig)
 	local row = {
 		name = noteBoxconfig.name,
@@ -120,9 +122,9 @@ function NoteBox.selectOrInsertNoteBox(noteBoxconfig)
 	}
 	local noteBox = NoteBox.select(row)
 	if noteBox.id > 0 then
-		return noteBox
+		return noteBox, false
 	else
-		return NoteBox.insert(row)
+		return NoteBox.insert(row), true
 	end
 end
 

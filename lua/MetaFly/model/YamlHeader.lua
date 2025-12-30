@@ -1,4 +1,7 @@
 local lyaml = require("lyaml")
+local Config = require("MetaFly.config")
+
+local logger = Config:getInstance():getLogger()
 
 local NoteData = {
 	title = "title",
@@ -105,12 +108,39 @@ function YamlHeader:getTitle()
 	return nil
 end
 
+local function safe_load_with_logger(yaml_str)
+	local ok, result_or_trace = xpcall(function()
+		return lyaml.load(yaml_str)
+	end, function(err)
+		local tb = debug.traceback(err, 2)
+		logger:error("YAML parse error:\n" .. tb)
+		return tb
+	end)
+
+	if ok then
+		return result_or_trace, nil
+	end
+	return nil, result_or_trace
+end
+
+function YamlHeader:parseYaml(yaml_text)
+	return safe_load_with_logger(yaml_text)
+end
+
 ---@param noteBox NoteBox
 function YamlHeader:parseDocument(noteBox)
 	if self.headerLines == nil then
 		return nil
 	end
-	self.header = lyaml.load(table.concat(self.headerLines, "\n"))
+	self.header, error = self:parseYaml(table.concat(self.headerLines, "\n"))
+	if not self.header then
+		logger:error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
+		return nil
+	end
+	if type(self.header) ~= "table" then
+		logger:error("YAML header in file " .. self.fileName .. " is not a table")
+		return nil
+	end
 	for key, value in pairs(self.header) do
 		if NoteData[key] ~= nil then
 			self.noteData[NoteData[key]] = type(value) ~= "table" and "" .. value or table.concat(value, ", ")

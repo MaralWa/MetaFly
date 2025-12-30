@@ -1,21 +1,33 @@
-local lfs = require("lfs")
+local loop = vim.loop
+
+local DirectoryIterator = require("MetaFly.utils.DirectoryIterator")
 
 local NotesIterator = {}
 
 NotesIterator.__index = NotesIterator
 
-function NotesIterator:new(root, maxdepth)
+function NotesIterator:new(noteBoxConfig)
 	local obj = setmetatable({}, self)
-	obj.root = root
-	obj.maxdepth = maxdepth or math.huge
-	local rootIterator, rootState, rootEntry = lfs.dir(root)
-	obj.stack = { {
-		dir = root,
-		depth = 0,
-		iterator = rootIterator,
-		state = rootState,
-		entry = rootEntry,
-	} }
+	local ignoredNames = { ".", "..", ".git", ".obsidian" }
+	for _, v in ipairs(noteBoxConfig.ignored or {}) do
+		table.insert(ignoredNames, v)
+	end
+	obj.root = noteBoxConfig.path:gsub("/$", "")
+	obj.maxdepth = noteBoxConfig.maxdepth or 1
+	obj.ignored = {}
+	for _, v in ipairs(ignoredNames) do
+		obj.ignored[v] = true
+	end
+	local rootIterator, error = DirectoryIterator.dir_iter(obj.root)
+	-- print(vim.inspect(error))
+	obj.ignoredEntries = {}
+	obj.stack = {
+		{
+			dir = obj.root,
+			depth = 0,
+			iterator = rootIterator,
+		},
+	}
 	return obj
 end
 
@@ -40,42 +52,35 @@ end
 function NotesIterator:next()
 	while #self.stack > 0 do
 		local top = self.stack[#self.stack]
-		local entry = top.iterator(top.state, top.entry)
+		local entryName, entryPath, entryAttr = top.iterator()
 
-		if entry == nil then
+		if entryName == nil then
 			table.remove(self.stack)
-		elseif entry ~= "." and entry ~= ".." and entry ~= ".git" then
-			local full = top.dir .. "/" .. entry
+		elseif not self.ignored[entryName] then
+			local full = top.dir .. "/" .. entryName
 
-			local attr = lfs.attributes(full)
-			if attr then
-				if attr.mode == "directory" then
+			if entryAttr then
+				if entryAttr.mode == "directory" then
 					-- neue Ebene pushen
-					local newIter, newState, newEntry = lfs.dir(full)
+					local newIter, newError = DirectoryIterator.dir_iter(full)
 					if top.depth < self.maxdepth then
 						table.insert(self.stack, {
 							dir = full,
 							depth = top.depth + 1,
 							iterator = newIter,
-							state = newState,
-							entry = newEntry,
 						})
 					end
-				elseif attr.mode == "file" and is_markdown(entry) then
-					return make_info(full, attr)
+				elseif entryAttr.mode == "file" and is_markdown(entryName) then
+					return make_info(full, entryAttr)
 				end
 			end
+		else
+			-- ignored entry
+			table.insert(self.ignoredEntries, entryName)
 		end
 	end
 
-	return nil -- fertig
+	return nil
 end
 
--- ------------------------------------------------------------
--- PUBLIC API
--- ------------------------------------------------------------
-local function markdown_files(root, maxdepth)
-	return NotesIterator:new(root, maxdepth)
-end
-
-notes = markdown_files("/Users/sarah/Documents/vimwiki", 2)
+return NotesIterator

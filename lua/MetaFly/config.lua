@@ -23,7 +23,7 @@ local defaults = {
 local function new()
 	print("new config")
 	local self = setmetatable({}, Config)
-	self.logger = require("logger"):new({ log_level = "debug", prefix = "MetaFly", echo_messages = false })
+	self.logger = require("logger"):new({ log_level = "error", prefix = "MetaFly", echo_messages = false })
 	return self
 end
 
