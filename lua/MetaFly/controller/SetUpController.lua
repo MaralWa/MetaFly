@@ -34,7 +34,6 @@ end
 ---@param noteBox NoteBox
 ---@param yamlHeader YamlHeader
 function SetUpController:updateNote(fileName, noteBox, yamlHeader)
-	logger:info("Updating note " .. fileName)
 	local noteData = yamlHeader:parseDocument(noteBox)
 	if noteData == nil then
 		return

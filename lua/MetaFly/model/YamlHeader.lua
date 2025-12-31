@@ -108,23 +108,30 @@ function YamlHeader:getTitle()
 	return nil
 end
 
-local function safe_load_with_logger(yaml_str)
-	local ok, result_or_trace = xpcall(function()
+function YamlHeader:safe_load_with_logger(yaml_str)
+	local ok, result_or_err = xpcall(function()
 		return lyaml.load(yaml_str)
 	end, function(err)
-		local tb = debug.traceback(err, 2)
-		logger:error("YAML parse error:\n" .. tb)
-		return tb
+		return debug.traceback(err, 2)
 	end)
 
-	if ok then
-		return result_or_trace, nil
+	if not ok then
+		local msg = "YAML parse error for file " .. self.fileName .. ": " .. result_or_err
+		if logger and logger.error then
+			-- Achtung: wenn logger.error normale vim-messages benutzt, kann das "Press ENTER" auslösen.
+			logger:error(msg)
+		else
+			-- zeige ohne in die Message-History zu schreiben
+			vim.api.nvim_echo({ { msg, "ErrorMsg" } }, false, {})
+		end
+		return nil, result_or_err
 	end
-	return nil, result_or_trace
+
+	return result_or_err, nil
 end
 
 function YamlHeader:parseYaml(yaml_text)
-	return safe_load_with_logger(yaml_text)
+	return self:safe_load_with_logger(yaml_text)
 end
 
 ---@param noteBox NoteBox
