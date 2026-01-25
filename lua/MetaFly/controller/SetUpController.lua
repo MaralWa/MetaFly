@@ -56,8 +56,14 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 			local metaDataToNote = MetaDataToNote.get(metaDataRow:getId(), note:getId())
 			if type(value) == "string" then
 				metaDataToNote:update(value)
+			elseif type(value) == "number" then
+				metaDataToNote:update(tostring(value))
+			elseif type(value) == "boolean" then
+				metaDataToNote:update(tostring(value))
+			elseif type(value) == "table" then
+				metaDataToNote:update(vim.json.encode(value))
 			else
-				metaDataToNote:update(table.concat(value, ", "))
+				logger:debug("Cannot save meta data value of type " .. type(value) .. " for note " .. note:getId())
 			end
 		end
 	end

@@ -108,6 +108,21 @@ function YamlHeader:getTitle()
 	return nil
 end
 
+function YamlHeader:createDateFromString(dateStr)
+	if nil == dateStr or #dateStr < 16 then
+		return os.time()
+	end
+	local day = tonumber(string.sub(dateStr, 1, 2))
+	local month = tonumber(string.sub(dateStr, 4, 5))
+	local year = tonumber(string.sub(dateStr, 7, 10))
+	local hour = tonumber(string.sub(dateStr, 12, 13))
+	local min = tonumber(string.sub(dateStr, 15, 16))
+	if day == nil or month == nil or year == nil or hour == nil or min == nil then
+		return os.time()
+	end
+	return os.time({ year = year, month = month, day = day, hour = hour, min = min, sec = 0 })
+end
+
 function YamlHeader:safe_load_with_logger(yaml_str)
 	local ok, result_or_err = xpcall(function()
 		return lyaml.load(yaml_str)
@@ -175,20 +190,7 @@ function YamlHeader:parseDocument(noteBox)
 		end
 		self.metaData.tags = nil
 	end
-	if self.header.date ~= nil then
-		self.noteData.created = ""
-			.. os.time({
-				year = string.sub(self.header["date"], 7, 10),
-				month = string.sub(self.header["date"], 4, 5),
-				day = string.sub(self.header["date"], 1, 2),
-				hour = string.sub(self.header["date"], 12, 13),
-				min = string.sub(self.header["date"], 15, 16),
-				sec = 0,
-			})
-		self.metaData["date"] = nil
-	else
-		self.noteData.created = "" .. os.time()
-	end
+	self.noteData.created = "" .. self:createDateFromString(self.header["date"])
 	return self.noteData
 end
 

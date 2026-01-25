@@ -5,6 +5,7 @@ local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 
 local MetaFlyView = require("MetaFly/model/MetaFlyView")
+local logger = require("MetaFly/utils/Logger")
 
 NotePiker = {}
 
@@ -14,7 +15,7 @@ NotePiker.notesView = function(fileName)
 	if fileName ~= nil then
 		pickerView = MetaFlyView:readFromFile(fileName)
 	else
-		pickerView = MetaFlyView.DefaultPicker
+		pickerView = require("MetaFly.model.PickerView").DefaultPicker
 	end
 
 	local options = {}
@@ -23,6 +24,8 @@ end
 
 NotePiker.notes = function(pickerView, opts)
 	local database = require("MetaFly.model.database"):getInstance()
+	local sqlStatement = pickerView:getSelectStatement()
+	logger.info("NotePiker.notes sqlStatement: " .. sqlStatement)
 	local sqlResult = database:callSql(pickerView:getSelectStatement(), pickerView.sqlMode)
 	local notesTable = {}
 	if sqlResult ~= nil then
