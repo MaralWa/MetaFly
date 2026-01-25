@@ -1,0 +1,7 @@
+---
+name: Notes from some NoteBox
+type: Picker
+description: Notes from some NoteBox
+where:
+  - NoteBox.name = "Some NoteBox"
+---
