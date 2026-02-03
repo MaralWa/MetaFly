@@ -1,8 +1,6 @@
 local Popup = require("nui.popup")
 local event = require("nui.utils.autocmd").event
 
-local SqlResultWindow = {}
-
 ---@class SqlResultWindow
 ---@field popup NuiPopup
 ---@field content table
@@ -84,9 +82,9 @@ end
 ---@param lines table Array of strings to display
 function SqlResultWindow:setContent(lines)
 	self.content = lines
-	vim.api.nvim_buf_set_option(self.popup.bufnr, "modifiable", true)
+	vim.bo[self.popup.bufnr].modifiable = true
 	vim.api.nvim_buf_set_lines(self.popup.bufnr, 0, -1, false, lines)
-	vim.api.nvim_buf_set_option(self.popup.bufnr, "modifiable", false)
+	vim.bo[self.popup.bufnr].modifiable = false
 end
 
 ---Copies the window content to clipboard
@@ -176,9 +174,9 @@ function SqlResultWindow.displaySqlResult(database, statement, mode, title)
 	}
 	
 	-- Append help text
-	vim.api.nvim_buf_set_option(window.popup.bufnr, "modifiable", true)
+	vim.bo[window.popup.bufnr].modifiable = true
 	vim.api.nvim_buf_set_lines(window.popup.bufnr, -1, -1, false, help_text)
-	vim.api.nvim_buf_set_option(window.popup.bufnr, "modifiable", false)
+	vim.bo[window.popup.bufnr].modifiable = false
 end
 
 return SqlResultWindow
