@@ -40,9 +40,6 @@ function SqlResultWindow:new(title)
 		},
 	})
 
-	-- Set up keymaps for the popup
-	newObject:setupKeymaps()
-
 	-- Unmount component when cursor leaves buffer
 	newObject.popup:on(event.BufLeave, function()
 		newObject.popup:unmount()
@@ -79,6 +76,8 @@ end
 ---Opens the window
 function SqlResultWindow:open()
 	self.popup:mount()
+	-- Set up keymaps after mounting so buffer is available
+	self:setupKeymaps()
 end
 
 ---Sets the content of the window
