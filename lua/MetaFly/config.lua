@@ -34,10 +34,6 @@ function Config:getInstance()
 	return instance
 end
 
-function Config:getLogger()
-	return self.logger
-end
-
 ---@type MetaFly.config
 local DefaultConfig = {
 	database = "~/.config/metafly_database.db",

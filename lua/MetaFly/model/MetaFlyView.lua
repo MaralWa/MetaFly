@@ -1,12 +1,15 @@
+local SqlBulider = require("MetaFly.utils.SqlBuilder")
+
 local MetaFlyView = {}
 
 ---@class MetaFlyView
 ---@field public name string
 ---@field public type string
 ---@field public description string
----@field public columns table
----@field public from string
+---@field public columns string|table
+---@field public from string|table
 ---@field public where string
+---@field public orderBy string|table
 ---@field public limit number
 ---@field public sqlMode string
 
@@ -30,18 +33,14 @@ end
 
 ---@return string|nil
 function MetaFlyView:getSelectStatement()
-	local selectStatement = "select "
-	if self.columns ~= nil and self.where ~= nil then
-		selectStatement = selectStatement
-			.. table.concat(self.columns, ", ")
-			.. " from "
-			.. self.from
-			.. " where "
-			.. table.concat(self.where, " and ")
-		return selectStatement
-	else
-		return nil
-	end
+	local builder = SqlBuilder:new()
+	return builder
+		:withColumns(self.columns)
+		:withFrom(self.from)
+		:withWhere(self.where)
+		:withOrderBy(self.orderBy)
+		:withLimit(self.limit)
+		:build()
 end
 
 return MetaFlyView

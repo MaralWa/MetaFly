@@ -1,6 +1,6 @@
 require("MetaFly.model.YamlHeader")
 
-local logger = require("MetaFly.config"):getInstance():getLogger()
+local logger = require("MetaFly.utils.Logger")
 
 local database = require("MetaFly.model.database")
 

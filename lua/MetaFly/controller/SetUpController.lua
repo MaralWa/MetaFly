@@ -13,7 +13,7 @@ local requiredNoteData = {
 	"title",
 }
 
-local logger = Config:getInstance():getLogger()
+local logger = require("MetaFly.utils.Logger")
 
 ---@class SetUpController
 local SetUpController = {}

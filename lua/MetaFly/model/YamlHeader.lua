@@ -1,7 +1,7 @@
 local lyaml = require("lyaml")
 local Config = require("MetaFly.config")
 
-local logger = Config:getInstance():getLogger()
+local logger = require("MetaFly.utils.Logger")
 
 local NoteData = {
 	title = "title",

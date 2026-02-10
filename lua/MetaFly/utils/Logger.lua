@@ -1,7 +1,7 @@
 local Logger = {}
 
 Logger.config = {
-	title = "MetaFly",
+	title = "MetaFly", -- Standardtitel für Benachrichtigungen
 	level = vim.log.levels.INFO, -- Loggerindest-Level
 	debug = false,
 }

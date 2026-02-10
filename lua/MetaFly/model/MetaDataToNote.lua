@@ -1,6 +1,6 @@
 local database = require("MetaFly.model.database")
 
-local logger = require("MetaFly.config"):getInstance():getLogger()
+local logger = require("MetaFly.utils.Logger")
 
 ---@class MetaDataToNote
 ---@field private id number

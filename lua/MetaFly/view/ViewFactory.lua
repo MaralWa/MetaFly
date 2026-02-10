@@ -3,20 +3,21 @@ local MetaFlyView = require("MetaFly.model.MetaFlyView")
 
 local ViewFactory = {}
 
+local logger = require("MetaFly.utils.Logger")
+
 ---@param fileName string
 ---@return MetaFlyView|nil
 function ViewFactory.readFromFile(fileName)
 	local create = {
 		Picker = function(values)
-			return require("PickerView"):new(values)
+			return require("MetaFly.model.PickerView"):new(values)
 		end,
 	}
 
-	local logger = require("MetaFly.config"):getInstance():getLogger()
-	logger.debug("Reading view from file: " .. fileName)
+	logger.info("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
-		logger:info("viewFile ist null")
+		logger.info("viewFile ist null")
 		return nil
 	end
 	local viewYaml = viewFile:read("*all")
@@ -24,12 +25,12 @@ function ViewFactory.readFromFile(fileName)
 	local viewData = lyaml.load(viewYaml)
 
 	if viewData == nil then
-		logger:info("viewData ist null")
+		logger.info("viewData ist null")
 		return nil
 	end
 	local viewType = viewData["type"]
 	if create[viewType] == nil then
-		logger:info("Unknown view type: " .. tostring(viewType))
+		logger.info("Unknown view type: " .. tostring(viewType))
 		return nil
 	end
 
@@ -51,7 +52,7 @@ function ViewFactory.createView(viewType, values)
 			newObject.columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" }
 			newObject.from = "Note, NoteBox"
 			newObject.sqlMode = "csv"
-			table.insert(newObject.where, "Note.idNoteBox = NoteBox.id and NoteBox.id")
+			table.insert(newObject.where, "Note.idNoteBox = NoteBox.id")
 			return newObject
 		end
 

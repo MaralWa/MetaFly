@@ -24,7 +24,7 @@ function PickerView:new(values)
 	newObject.columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" }
 	newObject.from = "Note, NoteBox"
 	newObject.sqlMode = "csv"
-	table.insert(newObject.where, "Note.idNoteBox = NoteBox.id and NoteBox.id")
+	newObject.where = "Note.idNoteBox = NoteBox.id and ( " .. values["where"] .. " )"
 	return newObject
 end
 
