@@ -16,15 +16,20 @@ function SqlResultWindow:new(title)
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
+	local help_text = " y: Copy to clipboard, s: Save to current buffer,  w: Save to new file,  q: Close window "
+	local title_text = title or " SQL Result "
+	title_text = title_text
 	newObject.content = {}
 	newObject.popup = Popup({
 		enter = true,
 		focusable = true,
 		border = {
+			padding = { top = 1, bottom = 1, left = 3, right = 3 },
 			style = "rounded",
 			text = {
-				top = title or " SQL Result ",
+				top = title_text,
 				top_align = "center",
+				bottom = help_text,
 			},
 		},
 		position = "50%",
@@ -98,24 +103,24 @@ end
 function SqlResultWindow:saveToCurrentBuffer()
 	-- Get the previous window (the one before the popup)
 	local prev_win = vim.fn.win_getid(vim.fn.winnr("#"))
-	
+
 	if prev_win == 0 or not vim.api.nvim_win_is_valid(prev_win) then
 		vim.notify("No valid previous window found", vim.log.levels.WARN)
 		return
 	end
 
 	local prev_buf = vim.api.nvim_win_get_buf(prev_win)
-	
+
 	-- Close the popup first
 	self.popup:unmount()
-	
+
 	-- Switch to the previous window
 	vim.api.nvim_set_current_win(prev_win)
-	
+
 	-- Insert content at cursor position
 	local cursor_pos = vim.api.nvim_win_get_cursor(prev_win)
 	local line = cursor_pos[1] - 1
-	
+
 	vim.api.nvim_buf_set_lines(prev_buf, line, line, false, self.content)
 	vim.notify("Content inserted into buffer!", vim.log.levels.INFO)
 end
@@ -124,7 +129,7 @@ end
 function SqlResultWindow:saveToNewFile()
 	-- Close the popup
 	self.popup:unmount()
-	
+
 	-- Prompt for filename
 	vim.ui.input({ prompt = "Enter filename: " }, function(filename)
 		if filename and filename ~= "" then
@@ -147,7 +152,7 @@ end
 function SqlResultWindow.displaySqlResult(database, statement, mode, title)
 	local sqlResult = database:callSql(statement, mode)
 	local lines = {}
-	
+
 	if sqlResult ~= nil then
 		for line in sqlResult:lines() do
 			table.insert(lines, line)
@@ -156,26 +161,14 @@ function SqlResultWindow.displaySqlResult(database, statement, mode, title)
 	else
 		lines = { "No results returned" }
 	end
-	
+
 	-- Create window with title
 	local window = SqlResultWindow:new(title or " SQL Result ")
 	window:setContent(lines)
 	window:open()
-	
-	-- Add help text at the bottom
-	local help_text = {
-		"",
-		"─────────────────────────────────",
-		"Keyboard commands:",
-		"  y - Copy to clipboard",
-		"  s - Save to current buffer",
-		"  w - Save to new file",
-		"  q - Close window",
-	}
-	
+
 	-- Append help text
 	vim.bo[window.popup.bufnr].modifiable = true
-	vim.api.nvim_buf_set_lines(window.popup.bufnr, -1, -1, false, help_text)
 	vim.bo[window.popup.bufnr].modifiable = false
 end
 
