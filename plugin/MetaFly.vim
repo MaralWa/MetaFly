@@ -8,6 +8,7 @@ endif
 command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
 command! MetaFlyView lua require('MetaFly.picker.NotePicker').notesView("/Users/sarah/Documents/MetaFly/views/Gwallore.yml")
 command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
+command! -nargs=+ MetaFlySqlResult lua require('MetaFly.view.SqlResultWindow').displaySqlResult(require('MetaFly.model.database'):getInstance(), <q-args>)
 
 let g:loaded_metafly = 1
 
