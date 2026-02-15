@@ -11,10 +11,8 @@ setmetatable(PickerView, {
 MetaFlyView.DefaultPicker = PickerView:new({
 	name = "DefaultView",
 	type = "Picker",
-	description = "Alle MetaFly Notizen",
-	columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" },
-	where = { "Note.idNoteBox = NoteBox.id" },
-	from = "Note, NoteBox",
+	description = "All Metafly notes",
+	columns = { "Note.title", "fullFileName" },
 	sqlMode = "csv",
 })
 

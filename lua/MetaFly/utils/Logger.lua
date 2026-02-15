@@ -25,14 +25,14 @@ end
 
 function Logger.log(msg, level, opts)
 	level = level or vim.log.levels.INFO
-	opts = opts or {}
+	opts = opts or Logger.config
 
 	if not should_log(level) then
 		return
 	end
 
-	opts.title = opts.title or Logger.config.title
-	notify(msg, level, opts)
+	-- opts.title = opts.title or Logger.config.title
+	notify(msg, level, Logger.config)
 end
 
 -- Convenience Wrapper
