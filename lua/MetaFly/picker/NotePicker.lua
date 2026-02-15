@@ -4,28 +4,33 @@ local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 
-local MetaFlyView = require("MetaFly/model/MetaFlyView")
+local ViewFactory = require("MetaFly.view.ViewFactory")
 local logger = require("MetaFly/utils/Logger")
 
-NotePiker = {}
+NotePicker = {}
 
 ---@param fileName string, nil
-NotePiker.notesView = function(fileName)
+NotePicker.notesView = function(fileName)
 	local pickerView = nil
 	if fileName ~= nil then
-		pickerView = MetaFlyView:readFromFile(fileName)
+		pickerView = ViewFactory.readFromFile(fileName)
+		if pickerView == nil then
+			logger.error("Failed to load picker view from file: " .. fileName)
+			vim.notify("Failed to load picker view from file: " .. fileName, vim.log.levels.ERROR)
+			return
+		end
 	else
 		pickerView = require("MetaFly.model.PickerView").DefaultPicker
 	end
 
 	local options = {}
-	NotePiker.notes(pickerView, options)
+	NotePicker.notes(pickerView, options)
 end
 
-NotePiker.notes = function(pickerView, opts)
+NotePicker.notes = function(pickerView, opts)
 	local database = require("MetaFly.model.database"):getInstance()
 	local sqlStatement = pickerView:getSelectStatement()
-	logger.info("NotePiker.notes sqlStatement: " .. sqlStatement)
+	logger.info("NotePicker.notes sqlStatement: " .. sqlStatement)
 	local sqlResult = database:callSql(pickerView:getSelectStatement(), pickerView.sqlMode)
 	local notesTable = {}
 	if sqlResult ~= nil then
@@ -74,4 +79,4 @@ NotePiker.notes = function(pickerView, opts)
 		:find()
 end
 
-return NotePiker
+return NotePicker

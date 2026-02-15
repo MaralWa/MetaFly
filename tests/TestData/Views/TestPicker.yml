@@ -1,0 +1,7 @@
+---
+name: Test Picker
+type: Picker
+description: Test picker for validation
+where:
+  - Note.title LIKE '%test%'
+---
