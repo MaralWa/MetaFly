@@ -1,5 +1,3 @@
-local uv = vim.loop
-
 local CommandHandler = require("MetaFly.command.CommandHandler")
 
 describe("MetaFly.command.CommandHandler", function()

@@ -10,6 +10,7 @@ command! -nargs=* -complete=custom,MetaFlyComplete MetaFly lua require('MetaFly.
 
 " Legacy commands for backward compatibility
 command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
+" Note: MetaFlyView contains a hardcoded path for backward compatibility with existing user configurations
 command! MetaFlyView lua require('MetaFly.picker.NotePicker').notesView("/Users/sarah/Documents/MetaFly/views/Gwallore.yml")
 command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
 command! -nargs=+ MetaFlySqlResult lua require('MetaFly.view.SqlResultWindow').displaySqlResult(require('MetaFly.model.database'):getInstance(), <q-args>)
