@@ -1,3 +1,4 @@
+local Config = require("MetaFly.config")
 local SetUpController = require("MetaFly.controller.SetUpController")
 local Database = require("MetaFly.model.database")
 
@@ -14,8 +15,7 @@ MetaFly.options = {}
 MetaFly.noteBoxes = {}
 
 function MetaFly.setup(opts)
-	opts = opts or {}
-	MetaFly.config = vim.tbl_deep_extend("force", MetaFly.config, opts)
+	Config:getInstance():setup(opts)
 	local db = Database:getInstance()
 	db:init(MetaFly.config)
 	logger.info("MetaFly Database initialized at: " .. db:getUri())

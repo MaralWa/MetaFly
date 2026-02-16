@@ -4,7 +4,7 @@ describe("MetaFly.model.YamlHeader", function()
 	local tmpdir
 
 	it("creates a new YamlHeader object", function()
-		local yaml = YamlHeader:new("testfile.md", 1)
+		local yh = YamlHeader:new("testfile.md", 1)
 		assert.is_table(yh)
 		assert.equals("testfile.md", yh.fileName)
 		assert.equals(1, yh.bufferNumber)

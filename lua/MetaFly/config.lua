@@ -23,7 +23,6 @@ local defaults = {
 local function new()
 	print("new config")
 	local self = setmetatable({}, Config)
-	self.logger = require("logger"):new({ log_level = "error", prefix = "MetaFly", echo_messages = false })
 	return self
 end
 
@@ -42,13 +41,14 @@ local DefaultConfig = {
 }
 
 -- setup() wird vom Benutzer aufgerufen
----@param user_config MetaFly.config
-function Config:setup(user_config)
-	if user_config["database"] then
-		self.database = user_config["database"]
+function Config:setup(opts)
+	opts = opts or {}
+	local user_config = vim.tbl_deep_extend("force", DefaultConfig, opts)
+	if user_config.database ~= nil then
+		self.database = user_config.database
 	end
 	if user_config.noteBoxes ~= nil then
-		self.database = user_config.database
+		self.noteBoxes = user_config.noteBoxes
 	end
 	if user_config.views ~= nil then
 		self.views = user_config.views

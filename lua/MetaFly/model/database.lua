@@ -1,6 +1,5 @@
 local sqlite = require("sqlite.db")
 local tbl = require("sqlite.tbl")
-local strftime = sqlite.lib.strftime
 local datetime = sqlite.lib.datetime
 
 local database = {}
@@ -62,13 +61,15 @@ end
 function database:getInstance()
 	if not instance then
 		instance = new()
+		instance:init()
 	end
 	return instance
 end
 
 ---@class Database
-function database:init(config)
-	if config.uri then
+function database:init()
+	local config = require("MetaFly.config"):getInstance()
+	if config.database then
 		self.uri = config.uri
 		self.command = "sqlite3 " .. config.uri
 	end
