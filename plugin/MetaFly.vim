@@ -5,15 +5,26 @@ if exists("g:loaded_metafly")
     finish
 endif
 
-" New unified MetaFly command with tab-completion
-command! -nargs=* -complete=custom,MetaFlyComplete MetaFly lua require('MetaFly.command.CommandHandler').execute(<f-args>)
-
 " Legacy commands for backward compatibility
 command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
 " Note: MetaFlyView contains a hardcoded path for backward compatibility with existing user configurations
 command! MetaFlyView lua require('MetaFly.picker.NotePicker').notesView("/Users/sarah/Documents/MetaFly/views/Gwallore.yml")
 command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
 command! -nargs=+ MetaFlySqlResult lua require('MetaFly.view.SqlResultWindow').displaySqlResult(require('MetaFly.model.database'):getInstance(), <q-args>)
+
+command! -nargs=* -complete=custom,MetaFlyComplete MetaFly call s:MetaFlyDispatch(<f-args>)
+
+function! s:MetaFlyDispatch(subcommand, ...)
+    if a:subcommand == 'SqlResult'
+        " Für SqlResult, kombiniere alle Argumente zu einem String
+        let l:sqlStatement = join(a:000, ' ')
+        call luaeval('require("MetaFly.view.SqlResultWindow").displaySqlResult(require("MetaFly.model.database"):getInstance(), _A)', l:sqlStatement)
+    else
+        " Für andere Subcommands, benutze den normalen Handler
+        call luaeval('require("MetaFly.command.CommandHandler").execute(_A)', [a:subcommand] + a:000)
+    endif
+endfunction
+
 
 " Tab-completion function for MetaFly command
 function! MetaFlyComplete(ArgLead, CmdLine, CursorPos)

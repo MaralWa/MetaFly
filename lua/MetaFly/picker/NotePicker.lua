@@ -39,6 +39,7 @@ NotePicker.notes = function(pickerView, opts)
 			table.insert(notesTable, { title:gsub('"', ""), fileName:gsub('"', "") })
 		end
 	end
+	logger.info("size of notesTable: " .. #notesTable)
 	opts = opts and opts or {}
 	-- local opts = {}
 	pickers

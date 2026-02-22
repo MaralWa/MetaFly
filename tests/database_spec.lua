@@ -1,16 +1,24 @@
+-- Setup: Füge das aktuelle Verzeichnis und sqlite.lua zum runtimepath hinzu
+vim.opt.runtimepath:prepend(vim.fn.getcwd())
+local data_path = vim.fn.stdpath("data")
+vim.opt.runtimepath:append(data_path .. "/lazy/sqlite.lua")
+
 local uv = vim.loop
 
 Database = require("MetaFly.model.database")
+Config = require("MetaFly.config")
 
 describe("Database", function()
 	local db
 
 	before_each(function()
+		Config:getInstance():setup({})
 		db = Database:getInstance()
 	end)
 
 	it("should have a URI and command", function()
 		assert.is_string(db:getUri())
+		assert.equals("~/.config/metafly_database.db", db:getUri())
 		assert.is_string(db:getCommand())
 	end)
 

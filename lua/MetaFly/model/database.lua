@@ -70,8 +70,8 @@ end
 function database:init()
 	local config = require("MetaFly.config"):getInstance()
 	if config.database then
-		self.uri = config.uri
-		self.command = "sqlite3 " .. config.uri
+		self.uri = config.database
+		self.command = "sqlite3 " .. config.database
 	end
 	self.DB = sqlite({
 		uri = self.uri,

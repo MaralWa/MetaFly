@@ -121,6 +121,7 @@ function SqlBuilder:build()
 	if self.limit then
 		query = query .. " LIMIT " .. tostring(self.limit)
 	end
+	print("Built SQL Query: " .. query) -- Debug print
 	return query
 end
 

@@ -15,7 +15,7 @@ describe("MetaFly.view.ViewFactory", function()
 		assert.are.equal("Note, NoteBox", picker.from, "From clause does not match expected")
 		assert.are.equal("csv", picker.sqlMode, "SQL mode does not match expected")
 		assert.are.same(
-			'Note.idNoteBox = NoteBox.id and NoteBox.name = "Some NoteBox"',
+			'Note.idNoteBox = NoteBox.id and ( NoteBox.name = "Some NoteBox" )',
 			picker.where,
 			"Where clause does not match expected"
 		)

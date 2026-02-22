@@ -9,15 +9,19 @@ local logger = require("MetaFly.utils.Logger")
 ---@return MetaFlyView|nil
 function ViewFactory.readFromFile(fileName)
 	local create = {
+
 		Picker = function(values)
+			vim.notify("Creating picker view from file: " .. fileName, vim.log.levels.ERROR)
 			return require("MetaFly.model.PickerView"):new(values)
 		end,
 	}
 
 	logger.info("Reading view from file: " .. fileName)
+	vim.notify("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
 		logger.info("viewFile ist null")
+		vim.notify("viewFile ist null")
 		return nil
 	end
 	local viewYaml = viewFile:read("*all")
@@ -26,11 +30,13 @@ function ViewFactory.readFromFile(fileName)
 
 	if viewData == nil then
 		logger.info("viewData ist null")
+		vim.notify("viewData ist null")
 		return nil
 	end
 	local viewType = viewData["type"]
 	if create[viewType] == nil then
 		logger.info("Unknown view type: " .. tostring(viewType))
+		vim.notify("Unknown view type: " .. tostring(viewType))
 		return nil
 	end
 

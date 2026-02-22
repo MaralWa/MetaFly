@@ -20,7 +20,7 @@ function PickerView:new(values)
 	local newObject = MetaFlyView.new(self, values)
 	setmetatable(newObject, self)
 	newObject.columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" }
-	newObject.from = "Note, NoteBox"
+	newObject.from = { "Note", "NoteBox" }
 	newObject.sqlMode = "csv"
 	newObject.where = "Note.idNoteBox = NoteBox.id and ( " .. values["where"] .. " )"
 	return newObject
