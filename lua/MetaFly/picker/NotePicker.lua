@@ -43,48 +43,46 @@ NotePicker.notes = function(pickerView, opts)
 	print("size of notesTable: " .. #notesTable)
 	opts = opts and opts or {}
 	-- local opts = {}
-	pickers
-		.new(opts, {
-			prompt_title = "notes",
-			finder = finders.new_table({
-				results = notesTable,
-				entry_maker = function(entry)
-					return {
-						value = entry,
-						display = entry[1],
-						ordinal = entry[1],
-						sort = entry[1],
-						filename = entry[2],
-					}
-				end,
-			}),
-			sorter = conf.generic_sorter(opts),
-			previewer = conf.file_previewer(opts),
-			attach_mappings = function(prompt_bufnr, map)
-				local function open_file()
-					local selection = action_state.get_selected_entry()
-					if selection == nil then
-						logger.error("No entry selected")
-						vim.notify("No entry selected", vim.log.levels.WARN)
-						return
-					end
-					actions.close(prompt_bufnr)
-					-- Verwenden Sie selection.filename statt selection.value[2] für bessere Lesbarkeit
-					vim.cmd.edit(selection.filename)
-				end
-
-				map("i", "<CR>", open_file)
-				map("n", "<CR>", open_file)
-
-				-- actions.select_default:replace(function()
-				-- 	local selection = action_state.get_selected_entry()
-				-- 	actions.close(prompt_bufnr)
-				-- 	vim.cmd.edit(selection.value[2])
-				-- end)
-				return true
+	local picker = pickers.new(opts, {
+		prompt_title = pickerView.name,
+		finder = finders.new_table({
+			results = notesTable,
+			entry_maker = function(entry)
+				return {
+					value = entry,
+					display = entry[1],
+					ordinal = entry[1],
+					sort = entry[1],
+					filename = entry[2],
+				}
 			end,
-		})
-		:find()
+		}),
+		sorter = conf.generic_sorter(opts),
+		previewer = conf.file_previewer(opts),
+
+		attach_mappings = function(prompt_bufnr, map)
+			local function open_file()
+				local selection = action_state.get_selected_entry()
+				if selection == nil then
+					logger.error("No entry selected")
+					vim.notify("No entry selected", vim.log.levels.WARN)
+					return
+				end
+				actions.close(prompt_bufnr)
+				vim.cmd.edit(selection.filename)
+			end
+
+			-- KRITISCH: Ersetzen Sie die Default-Action
+			actions.select_default:replace(open_file)
+
+			map("i", "<CR>", open_file)
+			map("n", "<CR>", open_file)
+
+			return true
+		end,
+	})
+
+	picker:find()
 end
 
 return NotePicker
