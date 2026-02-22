@@ -40,6 +40,7 @@ NotePicker.notes = function(pickerView, opts)
 		end
 	end
 	logger.info("size of notesTable: " .. #notesTable)
+	print("size of notesTable: " .. #notesTable)
 	opts = opts and opts or {}
 	-- local opts = {}
 	pickers
@@ -62,8 +63,14 @@ NotePicker.notes = function(pickerView, opts)
 			attach_mappings = function(prompt_bufnr, map)
 				local function open_file()
 					local selection = action_state.get_selected_entry()
+					if selection == nil then
+						logger.error("No entry selected")
+						vim.notify("No entry selected", vim.log.levels.WARN)
+						return
+					end
 					actions.close(prompt_bufnr)
-					vim.cmd.edit(selection.value[2])
+					-- Verwenden Sie selection.filename statt selection.value[2] für bessere Lesbarkeit
+					vim.cmd.edit(selection.filename)
 				end
 
 				map("i", "<CR>", open_file)
