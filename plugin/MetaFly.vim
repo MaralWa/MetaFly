@@ -7,6 +7,7 @@ endif
 
 " Legacy commands for backward compatibility
 command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
+command! MetaFlySnacksNotes lua require('MetaFly.picker.SnacksNotePicker').notesView()
 " Note: MetaFlyView contains a hardcoded path for backward compatibility with existing user configurations
 command! MetaFlyView lua require('MetaFly.picker.NotePicker').notesView("/Users/sarah/Documents/MetaFly/views/Gwallore.yml")
 command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
@@ -33,11 +34,11 @@ function! MetaFlyComplete(ArgLead, CmdLine, CursorPos)
     
     " If we're completing the first argument (subcommand)
     if a:CmdLine =~ '^\s*MetaFly\s*$' || l:numParts == 1
-        return ['Picker', 'Notes', 'Uri', 'SqlResult']
+        return ['Picker', 'SnacksPicker', 'Notes', 'Uri', 'SqlResult']
     endif
     
-    " If we're completing arguments for the Picker subcommand
-    if l:numParts >= 2 && l:parts[1] == 'Picker'
+    " If we're completing arguments for the Picker or SnacksPicker subcommand
+    if l:numParts >= 2 && (l:parts[1] == 'Picker' || l:parts[1] == 'SnacksPicker')
         let l:views = []
         let l:viewsPath = luaeval("require('MetaFly').config.views or '~/.config/views/'")
         let l:viewsPath = expand(l:viewsPath)
