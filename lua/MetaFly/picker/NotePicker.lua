@@ -41,9 +41,12 @@ NotePicker.notes = function(pickerView, opts)
 	end
 	logger.info("size of notesTable: " .. #notesTable)
 	print("size of notesTable: " .. #notesTable)
-	opts = opts and opts or {}
+
+	-- Komplett neue opts Tabelle für jeden Aufruf
+	local picker_opts = opts and vim.deepcopy(opts) or {}
+
 	-- local opts = {}
-	local picker = pickers.new(opts, {
+	local picker = pickers.new(picker_opts, {
 		prompt_title = pickerView.name,
 		finder = finders.new_table({
 			results = notesTable,
@@ -57,8 +60,8 @@ NotePicker.notes = function(pickerView, opts)
 				}
 			end,
 		}),
-		sorter = conf.generic_sorter(opts),
-		previewer = conf.file_previewer(opts),
+		sorter = conf.generic_sorter(picker_opts),
+		previewer = conf.file_previewer(picker_opts),
 
 		attach_mappings = function(prompt_bufnr, map)
 			local function open_file()
