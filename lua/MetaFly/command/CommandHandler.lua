@@ -17,6 +17,8 @@ function CommandHandler.execute(subcommand, ...)
 	end
 	if subcommand == "Picker" then
 		CommandHandler.executePicker(unpack(args))
+	elseif subcommand == "SnacksPicker" then
+		CommandHandler.executeSnacksPicker(unpack(args))
 	elseif subcommand == "Notes" then
 		CommandHandler.executeNotes()
 	elseif subcommand == "Uri" then
@@ -33,28 +35,42 @@ function CommandHandler.executePicker(fileNameOrBase)
 	if fileNameOrBase == nil then
 		NotePicker.notesView()
 	else
-		local isFullPath = fileNameOrBase:match("[/\\~]") ~= nil
+		NotePicker.notesView(CommandHandler.resolvePickerPath(fileNameOrBase))
+	end
+end
 
-		local fullPath
-		if isFullPath then
-			fullPath = vim.fn.expand(fileNameOrBase)
-		else
-			local viewsPath = config.views
-			if viewsPath:sub(-1) ~= "/" then
-				viewsPath = viewsPath .. "/"
-			end
+function CommandHandler.executeSnacksPicker(fileNameOrBase)
+	local SnacksNotePicker = require("MetaFly.picker.SnacksNotePicker")
 
-			local fileName = fileNameOrBase
-			if not fileName:match("%.ya?ml$") then
-				fileName = fileName .. ".yml"
-			end
+	if fileNameOrBase == nil then
+		SnacksNotePicker.notesView()
+	else
+		SnacksNotePicker.notesView(CommandHandler.resolvePickerPath(fileNameOrBase))
+	end
+end
 
-			fullPath = vim.fn.expand(viewsPath .. fileName)
+function CommandHandler.resolvePickerPath(fileNameOrBase)
+	local isFullPath = fileNameOrBase:match("[/\\~]") ~= nil
+
+	local fullPath
+	if isFullPath then
+		fullPath = vim.fn.expand(fileNameOrBase)
+	else
+		local viewsPath = config.views
+		if viewsPath:sub(-1) ~= "/" then
+			viewsPath = viewsPath .. "/"
 		end
 
-		logger.info("Loading picker from: " .. fullPath)
-		NotePicker.notesView(fullPath)
+		local fileName = fileNameOrBase
+		if not fileName:match("%.ya?ml$") then
+			fileName = fileName .. ".yml"
+		end
+
+		fullPath = vim.fn.expand(viewsPath .. fileName)
 	end
+
+	logger.info("Resolved picker path: " .. fullPath)
+	return fullPath
 end
 
 function CommandHandler.executeNotes()
