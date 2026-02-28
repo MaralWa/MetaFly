@@ -46,7 +46,7 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	Snacks.picker.pick(vim.tbl_extend("keep", {
 		title = pickerView.name,
 		items = items,
-		format = "file",
+		format = "text",
 		preview = "file",
 		confirm = function(picker, item)
 			if not item then
