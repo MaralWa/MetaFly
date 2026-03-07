@@ -50,7 +50,7 @@ function CommandHandler.executeSnacksPicker(fileNameOrBase)
 end
 
 function CommandHandler.resolvePickerPath(fileNameOrBase)
-	local isFullPath = fileNameOrBase:match("[/\\~]") ~= nil
+	local isFullPath = fileNameOrBase:match("[/\\~"] ~= nil
 
 	local fullPath
 	if isFullPath then
@@ -63,7 +63,16 @@ function CommandHandler.resolvePickerPath(fileNameOrBase)
 
 		local fileName = fileNameOrBase
 		if not fileName:match("%.ya?ml$") then
-			fileName = fileName .. ".yml"
+			-- Check whether a .yml or .yaml file exists and use the existing one
+			local ymlPath = vim.fn.expand(viewsPath .. fileName .. ".yml")
+			local yamlPath = vim.fn.expand(viewsPath .. fileName .. ".yaml")
+
+			if vim.fn.filereadable(yamlPath) == 1 then
+				fileName = fileName .. ".yaml"
+			else
+				-- Fall back to .yml (whether it exists or not)
+				fileName = fileName .. ".yml"
+			end
 		end
 
 		fullPath = vim.fn.expand(viewsPath .. fileName)
