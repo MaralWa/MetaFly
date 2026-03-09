@@ -50,7 +50,7 @@ function CommandHandler.executeSnacksPicker(fileNameOrBase)
 end
 
 function CommandHandler.resolvePickerPath(fileNameOrBase)
-	local isFullPath = fileNameOrBase:match("[/\\~"] ~= nil
+	local isFullPath = fileNameOrBase:match("[/\\~]") ~= nil
 
 	local fullPath
 	if isFullPath then
