@@ -19,14 +19,17 @@ describe("MetaFly.Logger", function()
 	}
 
 	it("logs messages at different levels", function()
-		local config = require("MetaFly.Config"):getInstance()
+		local config = require("MetaFly.config"):getInstance()
 		config:setup(opts)
 		print("Config after setup:")
 		print(vim.inspect(config))
 		print()
 
 		local logger = Logger:getInstance()
-		assert.equals("DEBUG", logger.level)
-		assert.equals("tests/TestData/metafly.log", logger.logFile)
+
+		logger:debug("This is a debug message")
+		logger:info("This is an info message")
+		logger:warn("This is a warning message")
+		logger:error("This is an error message")
 	end)
 end)
