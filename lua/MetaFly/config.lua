@@ -8,10 +8,24 @@ local instance = nil
 ---@field name string
 ---@field path string
 
+---@alias MetaFly.config.LoggerLevel
+---| "TRACE"
+---| "DEBUG"
+---| "INFO"
+---| "WARN"
+---| "ERROR"
+---| "OFF"
+
+---@class MetaFly.config.Logger
+---@field level MetaFly.config.LoggerLevel
+---@filed logFile string
+
 ---@class MetaFly.config
 ---@field database string
 ---@field noteBoxes MetaFly.config.NoteBox[]
+---@field logger MetaFly.config.Logger
 ---@field views string
+---@field valuesSeparator string
 
 -- Standardwerte (ptional)
 local defaults = {
@@ -20,7 +34,7 @@ local defaults = {
 	speed = "fast",
 }
 
-local function new()
+function Config:new()
 	print("new config")
 	local self = setmetatable({}, Config)
 	return self
@@ -28,7 +42,7 @@ end
 
 function Config:getInstance()
 	if not instance then
-		instance = new()
+		instance = self:new()
 	end
 	return instance
 end
@@ -38,6 +52,11 @@ local DefaultConfig = {
 	database = "~/.config/metafly_database.db",
 	noteBoxes = {},
 	views = "~/.config/views/",
+	valuesSeparator = " | ",
+	logger = {
+		level = "ERROR",
+		logFile = "~/.config/metafly.log",
+	},
 }
 
 -- setup() wird vom Benutzer aufgerufen
@@ -52,6 +71,12 @@ function Config:setup(opts)
 	end
 	if user_config.views ~= nil then
 		self.views = user_config.views
+	end
+	if user_config.valuesSeparator ~= nil then
+		self.valuesSeparator = user_config.valuesSeparator
+	end
+	if user_config.logger ~= nil then
+		self.logger = user_config.logger
 	end
 end
 

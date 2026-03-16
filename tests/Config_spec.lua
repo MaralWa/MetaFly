@@ -13,6 +13,10 @@ describe("MetaFly.Config", function()
 
 	it("does not modify the original config table", function()
 		local opts = {
+			logger = {
+				level = "DEBUG",
+				logFile = "tests/TestData/metafly.log",
+			},
 			database = "/Users/sarah/.config/metafly/metadata.db",
 			views = "/Users/sarah/.config/metafly/views/",
 			noteBoxes = {
@@ -24,10 +28,13 @@ describe("MetaFly.Config", function()
 				},
 			},
 		}
+
 		local config = Config:getInstance()
 		config:setup(opts)
 		assert.equals("/Users/sarah/.config/metafly/metadata.db", config.database)
 		assert.equals("/Users/sarah/.config/metafly/views/", config.views)
 		assert.equals(1, #config.noteBoxes)
+		assert.equals("DEBUG", config.logger.level)
+		assert.equals("tests/TestData/metafly.log", config.logger.logFile)
 	end)
 end)
