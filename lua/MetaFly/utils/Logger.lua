@@ -11,12 +11,13 @@ Logger.config = {
 local function new()
 	local self = setmetatable({}, { __index = Logger })
 	local config = require("MetaFly.config"):getInstance().logger
+	self.level = vim.log.levels[config.level] or vim.log.levels.ERROR
 	self.logger = require("plenary.log").new({
 		plugin = "my_plugin",
 		level = vim.log.levels[config.level],
 		use_console = "sync",
 		use_file = true,
-		outfile = config.fileName,
+		outfile = config.logFile,
 	})
 	return self
 end
