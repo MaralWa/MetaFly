@@ -48,7 +48,7 @@ describe("MetaFly.Logger", function()
 		local Logger = require("MetaFly.utils.Logger")
 		local logger = Logger:getInstance()
 
-		logger:info("test info message")
+		logger:debug("test info message")
 
 		local f = io.open(log_file, "r")
 		assert.is_not_nil(f)

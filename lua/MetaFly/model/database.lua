@@ -46,6 +46,14 @@ database.MetadataToNote = tbl("MetaDataToNote", {
 	value = { "text" },
 })
 
+---@class MetadataToNote
+database.MetadataToNote = tbl("ArrayDataToNote", {
+	id = true,
+	idMetaData = { "integer", reference = "MetaData.id", required = true },
+	idNote = { "integer", reference = "Note.id", required = true },
+	json = { "text" },
+})
+
 local function new()
 	local self = setmetatable({}, database)
 	self.uri = ""

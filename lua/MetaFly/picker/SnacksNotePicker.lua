@@ -42,7 +42,6 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	logger.info("size of items: " .. #items)
 
 	opts = opts or {}
-
 	Snacks.picker.pick(vim.tbl_extend("keep", {
 		title = pickerView.name,
 		items = items,
