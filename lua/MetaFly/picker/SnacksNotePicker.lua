@@ -1,5 +1,5 @@
 local ViewFactory = require("MetaFly.view.ViewFactory")
-local logger = require("MetaFly/utils/Logger")
+local logger = require("MetaFly.config"):getInstance():getLogger()
 
 local SnacksNotePicker = {}
 

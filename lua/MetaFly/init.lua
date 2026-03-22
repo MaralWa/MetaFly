@@ -1,19 +1,17 @@
-local Config = require("MetaFly.config")
-local SetUpController = require("MetaFly.controller.SetUpController")
-local Database = require("MetaFly.model.database")
-
 MetaFly = {}
 
-local logger = require("MetaFly.utils.Logger")
+local logger = nil
 
 MetaFly.options = {}
 MetaFly.noteBoxes = {}
 
 function MetaFly.setup(opts)
-	Config:getInstance():setup(opts)
-	local db = Database:getInstance()
-	logger:getInstance():info("MetaFly Database initialized at: " .. db:getUri())
-	local setUpController = SetUpController:new()
+	local config = require("MetaFly.config"):getInstance()
+	config:setOptions(opts)
+	logger = config:getLogger()
+	local db = require("MetaFly.model.database"):getInstance()
+	logger.info("MetaFly Database initialized at: " .. db:getUri())
+	local setUpController = require("MetaFly.controller.SetUpController"):new()
 	local noteboxes = setUpController:scanNoteBoxes(opts["noteBoxes"])
 end
 

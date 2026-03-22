@@ -47,7 +47,7 @@ database.MetadataToNote = tbl("MetaDataToNote", {
 })
 
 ---@class MetadataToNote
-database.MetadataToNote = tbl("ArrayDataToNote", {
+database.ArrayDataToNote = tbl("ArrayDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
 	idNote = { "integer", reference = "Note.id", required = true },

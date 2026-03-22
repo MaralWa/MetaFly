@@ -1,7 +1,7 @@
 local lyaml = require("lyaml")
 local Config = require("MetaFly.config")
 
-local logger = require("MetaFly.utils.Logger")
+local logger = nil
 
 local NoteData = {
 	title = "title",
@@ -42,6 +42,7 @@ local YamlHeader = {
 ---@param fileName string
 ---@param bufferNumber number
 function YamlHeader:new(fileName, bufferNumber)
+	logger = require("MetaFly.config"):getInstance():getLogger("YamlHeader")
 	local newObject = setmetatable({}, self)
 	self.__index = self
 	newObject.fileName = fileName
@@ -132,13 +133,7 @@ function YamlHeader:safe_load_with_logger(yaml_str)
 
 	if not ok then
 		local msg = "YAML parse error for file " .. self.fileName .. ": " .. result_or_err
-		if logger and logger.error then
-			-- Achtung: wenn logger.error normale vim-messages benutzt, kann das "Press ENTER" auslösen.
-			logger:error(msg)
-		else
-			-- zeige ohne in die Message-History zu schreiben
-			vim.api.nvim_echo({ { msg, "ErrorMsg" } }, false, {})
-		end
+		logger.error(msg)
 		return nil, result_or_err
 	end
 
@@ -156,11 +151,11 @@ function YamlHeader:parseDocument(noteBox)
 	end
 	self.header, error = self:parseYaml(table.concat(self.headerLines, "\n"))
 	if not self.header then
-		logger:error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
+		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
 		return nil
 	end
 	if type(self.header) ~= "table" then
-		logger:error("YAML header in file " .. self.fileName .. " is not a table")
+		logger.error("YAML header in file " .. self.fileName .. " is not a table")
 		return nil
 	end
 	for key, value in pairs(self.header) do

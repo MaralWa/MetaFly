@@ -1,6 +1,4 @@
-local database = require("MetaFly.model.database")
-
-local logger = require("MetaFly.utils.Logger")
+local logger = require("MetaFly.config"):getInstance():getLogger("ArrayDataToNote")
 
 ---@class MetaDataToNote
 ---@field private id number
@@ -34,9 +32,17 @@ end
 ---@param aIdNote number
 ---@return MetaDataToNote
 function MetaDataToNote.get(aIdMetaData, aIdNote)
+	logger.fmt_debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
 	local entries = sqlite.MetadataToNote:get({ where = row })
+	logger.fmt_debug(
+		"Found %d entries for MetaDataToNote with idMetaData %d and idNote %d",
+		#entries,
+		aIdMetaData,
+		aIdNote
+	)
+	logger.fmt_debug("Entries: %s", vim.inspect(entries))
 	if #entries == 1 then
 		for _, entry in pairs(entries) do
 			return MetaDataToNote:new(entry)
@@ -46,18 +52,25 @@ function MetaDataToNote.get(aIdMetaData, aIdNote)
 end
 
 ---@param value string
-function MetaDataToNote:update(value)
+function MetaDataToNote:update(newValue)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
+	logger.fmt_debug(
+		"Updating MetaDataToNote with id %d, idMetaData %d, idNote %d, value %s",
+		self.id,
+		self.idMetaData,
+		self.idNote,
+		newValue
+	)
 	if self.id == -1 then
-		local rowId = sqlite.MetadataToNote:insert({
-			idMetaData = self.idMetaData,
-			idNote = self.idNote,
-			value = value,
-		})
+		local newRow = {}
+		newRow.idMetaData = self.idMetaData
+		newRow.idNote = self.idNote
+		newRow.value = newValue
+		self.id = sqlite.MetadataToNote:insert(newRow)
 	else
-		database.MetadataToNote:update({
+		sqlite.MetadataToNote:update({
 			where = { id = self.id },
-			set = { value = value },
+			set = { value = newValue },
 		})
 	end
 end

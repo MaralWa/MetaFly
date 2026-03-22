@@ -1,6 +1,6 @@
 require("MetaFly.model.YamlHeader")
 
-local logger = require("MetaFly.utils.Logger")
+local logger = require("MetaFly.config"):getInstance():getLogger("Note")
 
 local database = require("MetaFly.model.database")
 
@@ -94,7 +94,7 @@ end
 ---@param values table
 ---@return Note | nil
 function Note.saveValues(values)
-	logger:debug("Saving note data: " .. values["title"])
+	logger.debug("Saving note data: " .. values["title"])
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	if not sqlite then
 		logger:debug("Failed to get sqlite instance")

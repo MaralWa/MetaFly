@@ -3,7 +3,7 @@ local MetaFlyView = require("MetaFly.model.MetaFlyView")
 
 local ViewFactory = {}
 
-local logger = require("MetaFly.utils.Logger")
+local logger = require("MetaFly.config"):getInstance():getLogger("ViewFactory")
 
 ---@param fileName string
 ---@return MetaFlyView|nil
@@ -16,11 +16,11 @@ function ViewFactory.readFromFile(fileName)
 		end,
 	}
 
-	logger.info("Reading view from file: " .. fileName)
+	logger:info("Reading view from file: " .. fileName)
 	vim.notify("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
-		logger.info("viewFile ist null")
+		logger:info("viewFile ist null")
 		vim.notify("viewFile ist null")
 		return nil
 	end
@@ -29,13 +29,13 @@ function ViewFactory.readFromFile(fileName)
 	local viewData = lyaml.load(viewYaml)
 
 	if viewData == nil then
-		logger.info("viewData ist null")
+		logger:info("viewData ist null")
 		vim.notify("viewData ist null")
 		return nil
 	end
 	local viewType = viewData["type"]
 	if create[viewType] == nil then
-		logger.info("Unknown view type: " .. tostring(viewType))
+		logger:info("Unknown view type: " .. tostring(viewType))
 		vim.notify("Unknown view type: " .. tostring(viewType))
 		return nil
 	end

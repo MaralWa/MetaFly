@@ -13,12 +13,13 @@ local requiredNoteData = {
 	"title",
 }
 
-local logger = require("MetaFly.utils.Logger")
+local logger = nil
 
 ---@class SetUpController
 local SetUpController = {}
 
 function SetUpController:new()
+	logger = require("MetaFly.config"):getInstance():getLogger("SetUpController")
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
@@ -27,7 +28,7 @@ end
 
 ---@param note Note
 function SetUpController:logNote(note)
-	logMsg = "Notiz - logNote: " .. note:getId() .. ", " .. note.title .. ", " .. note.fileName
+	logger.info("Saved note with id " .. note:getId() .. " and title " .. note.title)
 end
 
 ---@param fileName string
@@ -39,12 +40,12 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 		return
 	end
 	if noteData.title == nil or noteData.title == "" then
-		logger:debug("Using fileName as title: " .. fileName)
+		logger.debug("Using fileName as title: " .. fileName)
 		noteData.title = utils.getFileNameWithoutExtension(fileName)
 	end
 	local hasRequired, errors = self:hasRequiredData(noteData)
 	if not hasRequired then
-		logger:debug("Canno update note because of missing required datat")
+		logger.debug("Canno update note because of missing required datat")
 		table.insert(errors, 1, "Cannot update note:" .. fileName)
 		return
 	end
@@ -63,7 +64,7 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 			elseif type(value) == "table" then
 				metaDataToNote:update(vim.json.encode(value))
 			else
-				logger:debug("Cannot save meta data value of type " .. type(value) .. " for note " .. note:getId())
+				logger.debug("Cannot save meta data value of type " .. type(value) .. " for note " .. note:getId())
 			end
 		end
 	end
@@ -90,14 +91,14 @@ function SetUpController:scanNoteBox(noteBoxConfig)
 	local lastUpdated = noteBox:getLastUpdatedTimeStamp()
 	local note = notesIterator:next()
 	while note ~= nil do
-		logger:info("Found note: " .. note.path)
+		logger.info("Found note: " .. note.path)
 		if false and not noteBoxinserted and note.modified < lastUpdated then
-			logger:debug("Skipping note " .. note.path .. " because it was not modified since last scan.")
+			logger.debug("Skipping note " .. note.path .. " because it was not modified since last scan.")
 			print("Note was not modified since last scan.")
 		else
 			local yamlHeader, errorMsg = YamlHeader:getFromFile(note.path)
 			if errorMsg ~= nil then
-				logger:debug("Cannot read YAML header from note: " .. note.path .. " because of error: " .. errorMsg)
+				logger.debug("Cannot read YAML header from note: " .. note.path .. " because of error: " .. errorMsg)
 			else
 				self:updateNote(note.path, noteBox, yamlHeader)
 			end
@@ -113,13 +114,13 @@ end
 function SetUpController:scanNoteBoxes(noteboxConfigs)
 	local noteBoxes = {}
 	for _, noteBoxConfig in pairs(noteboxConfigs) do
-		logger:debug("NoteBox " .. noteBoxConfig["name"])
+		logger.debug("NoteBox " .. noteBoxConfig["name"])
 		local noteBoxName = noteBoxConfig["name"]
 		local noteBoxPath = string.sub(noteBoxConfig["path"], -1, -1) ~= "/" and noteBoxConfig["path"]
 			or string.sub(noteBoxConfig["path"], 1, -2)
 		local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
-		logger:debug("NoteBox ID " .. noteBox:getId())
-		logger:debug("NoteBox lastUpdated " .. noteBox.lastUpdated)
+		logger.debug("NoteBox ID " .. noteBox:getId())
+		logger.debug("NoteBox lastUpdated " .. noteBox.lastUpdated)
 		local idNoteBox = noteBox:getId()
 		local whereNotes = {}
 		whereNotes["idNoteBox"] = idNoteBox

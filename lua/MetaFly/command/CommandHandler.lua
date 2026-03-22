@@ -1,5 +1,5 @@
-local logger = require("MetaFly.utils.Logger")
 local config = require("MetaFly.config"):getInstance()
+local logger = config:getLogger("CommandHandler")
 
 local CommandHandler = {}
 

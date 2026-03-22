@@ -9,12 +9,12 @@ local instance = nil
 ---@field path string
 
 ---@alias MetaFly.config.LoggerLevel
----| "TRACE"
----| "DEBUG"
----| "INFO"
----| "WARN"
----| "ERROR"
----| "OFF"
+---| "trace"
+---| "debug"
+---| "info"
+---| "warn"
+---| "error"
+---| "off"
 
 ---@class MetaFly.config.Logger
 ---@field level MetaFly.config.LoggerLevel
@@ -37,6 +37,7 @@ local defaults = {
 function Config:new()
 	print("new config")
 	local self = setmetatable({}, Config)
+	self.theLogger = nil
 	return self
 end
 
@@ -54,13 +55,13 @@ local DefaultConfig = {
 	views = "~/.config/views/",
 	valuesSeparator = " | ",
 	logger = {
-		level = "ERROR",
+		level = "error",
 		logFile = "~/.config/metafly.log",
 	},
 }
 
 -- setup() wird vom Benutzer aufgerufen
-function Config:setup(opts)
+function Config:setOptions(opts)
 	opts = opts or {}
 	local user_config = vim.tbl_deep_extend("force", DefaultConfig, opts)
 	if user_config.database ~= nil then
@@ -78,6 +79,19 @@ function Config:setup(opts)
 	if user_config.logger ~= nil then
 		self.logger = user_config.logger
 	end
+end
+
+function Config:getLogger()
+	if self.theLogger == nil then
+		self.theLogger = require("plenary.log").new({
+			plugin = "MetaFly",
+			level = self.logger.level or "error",
+			use_console = "false",
+			use_file = true,
+			outfile = self.logger.logFile,
+		})
+	end
+	return self.theLogger
 end
 
 return Config
