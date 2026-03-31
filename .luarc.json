@@ -14,7 +14,8 @@
     "setup",
     "teardown",
     "pending",
-    "assert"
+    "assert",
+    "Snacks"
   ],
   "workspace.library": [
     "${3rd}/luv/library",
