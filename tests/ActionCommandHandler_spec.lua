@@ -63,29 +63,15 @@ describe("MetaFly.command.ActionCommandHandler", function()
 	-- -----------------------------------------------------------------------
 
 	it("should dispatch to executeOpen when action is 'open'", function()
-		local called_with = nil
-		local original = ActionCommandHandler.executeOpen
-		ActionCommandHandler.executeOpen = function(args)
-			called_with = args
-		end
-
 		ActionCommandHandler.execute("open", "some/path")
-
-		ActionCommandHandler.executeOpen = original
-		assert.are.equal("some/path", called_with)
+		local lastAction = ActionCommandHandler.lastAction()
+		assert.are.equal("open with args: some/path", lastAction)
 	end)
 
 	it("should dispatch to executeSearch when action is 'search'", function()
-		local called_with = nil
-		local original = ActionCommandHandler.executeSearch
-		ActionCommandHandler.executeSearch = function(args)
-			called_with = args
-		end
-
 		ActionCommandHandler.execute("search", "keyword")
-
-		ActionCommandHandler.executeSearch = original
-		assert.are.equal("keyword", called_with)
+		local lastAction = ActionCommandHandler.lastAction()
+		assert.are.equal("search with args: keyword", lastAction)
 	end)
 
 	it("should dispatch to promptAction when no action is given", function()

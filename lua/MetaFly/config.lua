@@ -83,12 +83,13 @@ end
 
 function Config:getLogger()
 	if self.theLogger == nil then
+		local loggerConfig = self.logger or DefaultConfig.logger
 		self.theLogger = require("plenary.log").new({
 			plugin = "MetaFly",
-			level = self.logger.level or "error",
+			level = loggerConfig.level or "error",
 			use_console = "false",
 			use_file = true,
-			outfile = self.logger.logFile,
+			outfile = loggerConfig.logFile,
 		})
 	end
 	return self.theLogger

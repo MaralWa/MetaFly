@@ -9,6 +9,12 @@ local logger = config:getLogger()
 
 local ActionCommandHandler = {}
 
+local lastAction = nil
+
+ActionCommandHandler.lastAction = function()
+	return lastAction
+end
+
 -- The ordered list of supported actions.
 ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore" }
 
@@ -23,11 +29,12 @@ local actionDispatch = {}
 function ActionCommandHandler.executeAction(action, args)
 	local handler = actionDispatch[action]
 	if handler then
+		lastAction = action .. (args and (" with args: " .. args) or "")
 		handler(args)
 	else
-		local msg = "Unknown MetaFly action: " .. tostring(action)
-		logger.error(msg)
-		vim.notify(msg, vim.log.levels.ERROR)
+		lastAction = "Unknown MetaFly action: " .. tostring(action)
+		logger.error(lastAction)
+		vim.notify(lastAction, vim.log.levels.ERROR)
 	end
 end
 
@@ -38,9 +45,7 @@ function ActionCommandHandler.execute(action, args)
 	if action == nil or action == "" then
 		-- No action supplied – ask the user which one to run.
 		ActionCommandHandler.promptAction(args)
-		return
 	end
-
 	ActionCommandHandler.executeAction(action, args)
 end
 
