@@ -73,6 +73,7 @@ end
 function ActionCommandHandler.executeOpen(args)
 	logger.info("MetaFly action: open" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly open: " .. tostring(args), vim.log.levels.INFO)
+	require("MetaFly.picker.SnacksNotePicker").notesView(args)
 end
 
 -- Display a view, optionally specified by args.
@@ -94,6 +95,7 @@ end
 function ActionCommandHandler.executeQuery(args)
 	logger.info("MetaFly action: query" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly query: " .. tostring(args), vim.log.levels.INFO)
+	require("MetaFly.view.SqlResultWindow").displaySqlResult(args)
 end
 
 -- Search notes by keyword or pattern given in args.

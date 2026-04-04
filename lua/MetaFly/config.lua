@@ -35,7 +35,6 @@ local defaults = {
 }
 
 function Config:new()
-	print("new config")
 	local self = setmetatable({}, Config)
 	self.theLogger = nil
 	return self
@@ -81,13 +80,17 @@ function Config:setOptions(opts)
 	end
 end
 
+function Config:getViewsDirectory()
+	return self.views or DefaultConfig.views
+end
+
 function Config:getLogger()
 	if self.theLogger == nil then
 		local loggerConfig = self.logger or DefaultConfig.logger
 		self.theLogger = require("plenary.log").new({
 			plugin = "MetaFly",
 			level = loggerConfig.level or "error",
-			use_console = "false",
+			use_console = false,
 			use_file = true,
 			outfile = loggerConfig.logFile,
 		})

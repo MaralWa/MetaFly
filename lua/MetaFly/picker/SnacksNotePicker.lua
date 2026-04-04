@@ -5,8 +5,9 @@ local SnacksNotePicker = {}
 
 ---@param fileName string|nil
 SnacksNotePicker.notesView = function(fileName)
+	logger.info("SnacksNotePicker.notesView called with fileName: " .. tostring(fileName))
 	local pickerView = nil
-	if fileName ~= nil then
+	if fileName ~= nil and fileName ~= "" then
 		pickerView = ViewFactory.readFromFile(fileName)
 		if pickerView == nil then
 			logger.error("Failed to load picker view from file: " .. fileName)

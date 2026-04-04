@@ -149,7 +149,8 @@ end
 ---@param statement string The SQL statement to execute
 ---@param mode string|nil Optional mode parameter for callSql
 ---@param title string|nil Optional window title
-function SqlResultWindow.displaySqlResult(database, statement, mode, title)
+function SqlResultWindow.displaySqlResult(statement, mode, title)
+	local database = require("MetaFly.model.database"):getInstance()
 	local sqlResult = database:callSql(statement, mode)
 	local lines = {}
 
