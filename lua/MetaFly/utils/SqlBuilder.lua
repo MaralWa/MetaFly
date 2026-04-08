@@ -29,6 +29,13 @@ local columnSnippets = {
 	tags = "group_concat(Tag.name, ', ')",
 }
 
+local AllowedInherits = {
+	"Note.idNoteBox",
+	"Note.type",
+	"Note.status",
+	"Note.context",
+}
+
 ---@class SqlBuilder
 ---@field public columns table
 ---@field public from table
@@ -53,6 +60,7 @@ function SqlBuilder:withColumns(cols)
 	if cols == nil or #cols == 0 then
 		return self
 	end
+	local fileName = vim.api.nvim_buf_get_name(0)
 	for _, col in ipairs(cols) do
 		if columnSnippets[col] then
 			local columnSpec = columnSnippets[col]
@@ -88,6 +96,25 @@ function SqlBuilder:withWhere(condition)
 		self.where = condition
 	else
 		self.where = self.where .. " AND " .. condition
+	end
+	return self
+end
+
+function SqlBuilder:withInherits(inherits)
+	if inherits == nil or #inherits == 0 then
+		return self
+	end
+	for _, inherit in ipairs(inherits) do
+		if table.contains(AllowedInherits, inherit) then
+			local bufferValue = require("MetaFly.model.database"):getInstanece():getPropertyOfCurrentBuffer(inherit)
+			if bufferValue ~= nil then
+				self:withWhere(inherit .. ' = "' .. bufferValue .. '"')
+			else
+				print("Warning: No value found for inherit condition: " .. inherit)
+			end
+		else
+			print("Warning: Ignoring invalid inherit condition: " .. inherit)
+		end
 	end
 	return self
 end

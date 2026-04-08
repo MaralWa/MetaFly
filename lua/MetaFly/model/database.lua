@@ -131,6 +131,31 @@ function database:callSql(statement, mode)
 	return sqlResult
 end
 
+function database:getPropertyOfCurrentBuffer(property)
+	local fileName = vim.api.nvim_buf_get_name(0)
+	local statement = "select "
+		.. property
+		.. " as property, "
+		.. 'NoteBox.path || "/" || Note.fileName as fullFileName '
+		.. "from Note, NoteBox where Note.idNoteBox = NoteBox.id and "
+		.. 'fullFileName = "'
+		.. fileName
+		.. '";'
+	local jsonResult = self:callSql(statement, "json")
+	if jsonResult == nil or jsonResult == "" then
+		return nil
+	end
+
+	local ok, data = pcall(vim.json.decode, jsonResult)
+	if not ok then
+		print("Error decoding JSON: " .. data)
+		return nil
+	end
+	if #data == 1 then
+		return data[1].property
+	end
+end
+
 ---comment
 ---@param statement string
 function database:select(statement)

@@ -9,6 +9,7 @@ local MetaFlyView = {}
 ---@field public columns string|table
 ---@field public from string|table
 ---@field public where string
+---@field public inherit string|table
 ---@field public orderBy string|table
 ---@field public limit number
 ---@field public sqlMode string
@@ -38,6 +39,7 @@ function MetaFlyView:getSelectStatement()
 		:withColumns(self.columns)
 		:withFrom(self.from)
 		:withWhere(self.where)
+		:withInherit(self.inherit)
 		:withOrderBy(self.orderBy)
 		:withLimit(self.limit)
 		:build()
