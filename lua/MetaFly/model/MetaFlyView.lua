@@ -1,5 +1,5 @@
 local SqlBulider = require("MetaFly.utils.SqlBuilder")
-
+local logger = require("MetaFly.config"):getInstance():getLogger("MetaFlyView")
 local MetaFlyView = {}
 
 ---@class MetaFlyView
@@ -29,6 +29,7 @@ function MetaFlyView:new(values)
 	newObject.where = values["where"]
 	newObject.sqlMode = values["sqlMode"]
 
+	logger:debug("Created MetaFlyView with name: " .. newObject.name .. " and where clause: " .. newObject.where)
 	return newObject
 end
 
@@ -39,7 +40,7 @@ function MetaFlyView:getSelectStatement()
 		:withColumns(self.columns)
 		:withFrom(self.from)
 		:withWhere(self.where)
-		:withInherit(self.inherit)
+		:withInherits(self.inherit)
 		:withOrderBy(self.orderBy)
 		:withLimit(self.limit)
 		:build()

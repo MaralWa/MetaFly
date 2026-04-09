@@ -38,7 +38,7 @@ function ViewFactory.readFromFile(viewName)
 	vim.notify("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
-		logger. ("viewFile ist null")
+		logger.error("viewFile ist null")
 		return nil
 	end
 	local viewYaml = viewFile:read("*all")
