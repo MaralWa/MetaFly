@@ -1,4 +1,5 @@
 local ViewFactory = require("MetaFly.view.ViewFactory")
+local pickerViewModule = require("MetaFly.model.PickerView")
 local logger = require("MetaFly.config"):getInstance():getLogger()
 
 local SnacksNotePicker = {}
@@ -15,7 +16,13 @@ SnacksNotePicker.notesView = function(fileName)
 			return
 		end
 	else
-		pickerView = require("MetaFly.model.PickerView").DefaultPicker
+		logger.info("No fileName provided, using default picker view")
+		if pickerViewModule == nil then
+			logger.error("Failed to load PickerView module")
+			vim.notify("Failed to load PickerView module", vim.log.levels.ERROR)
+			return
+		end
+		pickerView = pickerViewModule.getDefaultPicker()
 	end
 
 	local options = {}

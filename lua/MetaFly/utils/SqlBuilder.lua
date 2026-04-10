@@ -1,3 +1,5 @@
+local logger = require("MetaFly.config").getInstance():getLogger("SqlBuilder")
+
 SqlBuilder = {}
 
 local columnSnippets = {
@@ -89,6 +91,7 @@ function SqlBuilder:withFrom(tables)
 end
 
 function SqlBuilder:withWhere(condition)
+	logger.debug("Adding WHERE condition: " .. tostring(condition)) -- Debug print
 	if condition == nil or condition == "" then
 		return self
 	end
@@ -100,15 +103,25 @@ function SqlBuilder:withWhere(condition)
 	return self
 end
 
+function SqlBuilder:isValidInherit(inherit)
+	for _, validInherit in ipairs(AllowedInherits) do
+		if inherit == validInherit then
+			return true
+		end
+	end
+	return false
+end
+
 function SqlBuilder:withInherits(inherits)
+	logger.debug("Processing inherits: " .. vim.inspect(inherits)) -- Debug print
 	if inherits == nil or #inherits == 0 then
 		return self
 	end
 	for _, inherit in ipairs(inherits) do
-		if table.contains(AllowedInherits, inherit) then
-			local bufferValue = require("MetaFly.model.database"):getInstanece():getPropertyOfCurrentBuffer(inherit)
+		if SqlBuilder:isValidInherit(inherit) then
+			local bufferValue = require("MetaFly.model.database"):getInstance():getPropertyOfCurrentBuffer(inherit)
 			if bufferValue ~= nil then
-				self:withWhere(inherit .. ' = "' .. bufferValue .. '"')
+				self:withWhere(inherit .. " = '" .. bufferValue .. "'")
 			else
 				print("Warning: No value found for inherit condition: " .. inherit)
 			end

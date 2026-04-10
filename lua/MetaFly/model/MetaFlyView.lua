@@ -29,7 +29,9 @@ function MetaFlyView:new(values)
 	newObject.where = values["where"]
 	newObject.sqlMode = values["sqlMode"]
 
-	logger:debug("Created MetaFlyView with name: " .. newObject.name .. " and where clause: " .. newObject.where)
+	logger:debug(
+		"Created MetaFlyView with name: " .. newObject.name .. " and where clause: " .. tostring(newObject.where)
+	)
 	return newObject
 end
 

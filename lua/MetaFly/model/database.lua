@@ -126,6 +126,7 @@ function database:callSql(statement, mode)
 	if mode ~= nil then
 		command = command .. " -" .. mode
 	end
+	print("Executing command: " .. command .. ' "' .. statement .. '"')
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
@@ -136,12 +137,24 @@ function database:getPropertyOfCurrentBuffer(property)
 	local statement = "select "
 		.. property
 		.. " as property, "
-		.. 'NoteBox.path || "/" || Note.fileName as fullFileName '
+		.. "NoteBox.path || '/' || Note.fileName as fullFileName "
 		.. "from Note, NoteBox where Note.idNoteBox = NoteBox.id and "
-		.. 'fullFileName = "'
+		.. "fullFileName = '"
 		.. fileName
-		.. '";'
-	local jsonResult = self:callSql(statement, "json")
+		.. "'"
+	print("Executing SQL: " .. statement)
+
+	local sqlResult = self:callSql(statement, "json")
+	local jsonResult = ""
+
+	if sqlResult ~= nil then
+		for line in sqlResult:lines() do
+			jsonResult = jsonResult .. line
+		end
+		sqlResult:close()
+	end
+	print("SQL Result: " .. jsonResult)
+
 	if jsonResult == nil or jsonResult == "" then
 		return nil
 	end

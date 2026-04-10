@@ -35,7 +35,6 @@ function ViewFactory.readFromFile(viewName)
 		return nil
 	end
 	logger.info("Reading view from file: " .. fileName)
-	vim.notify("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
 		logger.error("viewFile ist null")
