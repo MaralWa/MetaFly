@@ -1,65 +1,65 @@
 local database = require("MetaFly.model.database")
 
-local logger = require("MetaFly.config"):getInstance():getLogger("ArrayDataToNote")
+local logger = require("MetaFly.config"):getInstance():getLogger("JsonDataToNote")
 
----@class ArrayDataToNote
+---@class JsonDataToNote
 ---@field private id number
 ---@field  idMetaData number
 ---@field  idNote number
----@field  values string
-ArrayDataToNote = {
+---@field  json string
+JsonDataToNote = {
 	id = 0,
 	idMetaData = 0,
 	idNote = 0,
-	values = "",
+	json = "",
 }
 
-function ArrayDataToNote:new(row)
+function JsonDataToNote:new(row)
 	local newObject = setmetatable({}, self)
 	self.__index = self
 
 	newObject.id = row["id"]
 	newObject.idMetaData = row["idMetaData"]
 	newObject.idNote = row["idNote"]
-	newObject.values = row["values"]
+	newObject.json = row["json"]
 	return newObject
 end
 
 ---@return number
-function ArrayDataToNote:getId()
+function JsonDataToNote:getId()
 	return self.id
 end
 
 ---@param aIdMetaData number
 ---@param aIdNote number
----@return ArrayDataToNote
-function ArrayDataToNote.get(aIdMetaData, aIdNote)
+---@return JsonDataToNote
+function JsonDataToNote.get(aIdMetaData, aIdNote)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
 	local entries = sqlite.MetadataToNote:get({ where = row })
 	if #entries == 1 then
 		for _, entry in pairs(entries) do
-			return ArrayDataToNote:new(entry)
+			return JsonDataToNote:new(entry)
 		end
 	end
-	return ArrayDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote })
+	return JsonDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote })
 end
 
----@param values string
-function ArrayDataToNote:update(values)
+---@param json string
+function JsonDataToNote:update(json)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	if self.id == -1 then
 		local rowId = sqlite.MetadataToNote:insert({
 			idMetaData = self.idMetaData,
 			idNote = self.idNote,
-			values = values,
+			json = json,
 		})
 	else
 		database.MetadataToNote:update({
 			where = { id = self.id },
-			set = { values = values },
+			set = { json = json },
 		})
 	end
 end
 
-return ArrayDataToNote
+return JsonDataToNote

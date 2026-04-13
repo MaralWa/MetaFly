@@ -29,7 +29,7 @@ local YamlHeader = {
 	mapping = {},
 	noteData = {
 		idNoteBox = "",
-		noteId = "xxxx",
+		noteId = "",
 		type = "note",
 		status = "",
 		context = "",
@@ -144,6 +144,19 @@ function YamlHeader:parseYaml(yaml_text)
 	return self:safe_load_with_logger(yaml_text)
 end
 
+function YamlHeader:asJson(value)
+	if value == nil then
+		return nil
+	end
+	if type(value) == "string" and value ~= "" then
+		return vim.fn.json_encode({ value })
+	end
+	if type(value) == "table" and #value > 0 then
+		return vim.fn.json_encode(value)
+	end
+	return nil
+end
+
 ---@param noteBox NoteBox
 function YamlHeader:parseDocument(noteBox)
 	if self.headerLines == nil then
@@ -166,7 +179,7 @@ function YamlHeader:parseDocument(noteBox)
 		end
 	end
 	if self.noteData.title == nil or self.noteData.title == "" then
-		self.noteData.title = self.getTitle(self)
+		self.noteData.title = self:getTitle()
 	end
 	self.noteData.idNoteBox = "" .. noteBox:getId()
 	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
@@ -177,14 +190,10 @@ function YamlHeader:parseDocument(noteBox)
 		self.noteData.noteId = self.noteData.title
 	end
 	--self.metaData.id = nil
-	if self.header.tags ~= nil then
-		if type(self.header.tags) == "table" then
-			self.noteData.tags = #self.header["tags"] > 0 and table.concat(self.header["tags"], ", ") or ""
-		else
-			self.noteData.tags = self.noteData["tags"]
-		end
-		self.metaData.tags = nil
-	end
+	self.noteData.tags = self:asJson(self.header.tags)
+	self.metaData.tags = nil
+	self.noteData.context = self:asJson(self.header.context)
+	self.metaData.context = nil
 	self.noteData.created = "" .. self:createDateFromString(self.header["date"])
 	return self.noteData
 end

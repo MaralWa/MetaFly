@@ -61,7 +61,7 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 				metaDataToNote:update(tostring(value))
 			elseif type(value) == "boolean" then
 				metaDataToNote:update(tostring(value))
-			elseif type(value) == "table" then
+			elseif type(value) == "table" and #value > 0 then
 				metaDataToNote:update(vim.json.encode(value))
 			else
 				logger.debug("Cannot save meta data value of type " .. type(value) .. " for note " .. note:getId())

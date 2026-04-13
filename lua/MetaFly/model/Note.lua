@@ -94,7 +94,7 @@ end
 ---@param values table
 ---@return Note | nil
 function Note.saveValues(values)
-	logger.debug("Saving note data: " .. values["title"])
+	logger.debug("Saving note data: " .. vim.inspect(values))
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	if not sqlite then
 		logger:debug("Failed to get sqlite instance")

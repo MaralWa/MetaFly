@@ -1,14 +1,16 @@
-local logger = require("MetaFly.config"):getInstance():getLogger("ArrayDataToNote")
+local logger = require("MetaFly.config"):getInstance():getLogger("MetaDataToNote")
 
 ---@class MetaDataToNote
 ---@field private id number
 ---@field  idMetaData number
 ---@field  idNote number
+---@field index number
 ---@field  value string
 MetaDataToNote = {
 	id = 0,
 	idMetaData = 0,
 	idNote = 0,
+	index = 0,
 	value = "",
 }
 
@@ -20,6 +22,7 @@ function MetaDataToNote:new(row)
 	newObject.idMetaData = row["idMetaData"]
 	newObject.idNote = row["idNote"]
 	newObject.value = row["value"]
+	newObject.index = row["index"]
 	return newObject
 end
 
@@ -51,7 +54,7 @@ function MetaDataToNote.get(aIdMetaData, aIdNote)
 	return MetaDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote })
 end
 
----@param value string
+---@param newValue string
 function MetaDataToNote:update(newValue)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	logger.fmt_debug(

@@ -43,6 +43,7 @@ local AllowedInherits = {
 ---@field public from table
 ---@field public where string
 ---@field public orderBy table
+---@field public groupBy table
 ---@field public limit number
 
 function SqlBuilder:new()
@@ -50,6 +51,7 @@ function SqlBuilder:new()
 		columns = {},
 		from = {},
 		where = "",
+		groupBy = {},
 		orderBy = {},
 		limit = nil,
 	}
@@ -142,6 +144,16 @@ function SqlBuilder:withOrderBy(cols)
 	return self
 end
 
+function SqlBuilder:withGroupBy(cols)
+	if cols == nil or #cols == 0 then
+		return self
+	end
+	for _, col in ipairs(cols) do
+		table.insert(self.groupBy, col)
+	end
+	return self
+end
+
 function SqlBuilder:withLimit(lim)
 	if lim == nil then
 		return self
@@ -160,6 +172,9 @@ function SqlBuilder:build()
 	end
 	if self.limit then
 		query = query .. " LIMIT " .. tostring(self.limit)
+	end
+	if #self.groupBy > 0 then
+		query = query .. " GROUP BY " .. table.concat(self.groupBy, ", ")
 	end
 	print("Built SQL Query: " .. query) -- Debug print
 	return query

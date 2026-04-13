@@ -1,5 +1,6 @@
 local config = require("MetaFly.config"):getInstance()
 local notesPickerController = require("MetaFly.controller.NotesPickerController")
+local viewController = require("MetaFly.controller.ViewController")
 local logger = config:getLogger()
 
 -- ActionCommandHandler provides an alternative command handler for the "MetaFly"
@@ -82,6 +83,7 @@ end
 function ActionCommandHandler.executeView(args)
 	logger.info("MetaFly action: view" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly view: " .. tostring(args), vim.log.levels.INFO)
+	viewController.showView(args)
 end
 
 -- Select an item interactively, with optional filter/scope in args.
