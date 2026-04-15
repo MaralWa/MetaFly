@@ -61,7 +61,7 @@ function BufferValidator.validate(lines)
 				})
 				openRegion = nil
 			else
-				table.insert(regions, { beginLine = openRegion.beginLine, endLine = i })
+				table.insert(regions, { name = openRegion.name, beginLine = openRegion.beginLine, endLine = i })
 				openRegion = nil
 			end
 		end

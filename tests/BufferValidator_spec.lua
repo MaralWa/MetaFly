@@ -38,7 +38,7 @@ describe("MetaFly.view.BufferValidator", function()
 			}
 			local hasErrors, results = BufferValidator.validate(lines)
 			assert.is_false(hasErrors)
-			assert.are.same({ { beginLine = 2, endLine = 5 } }, results)
+			assert.are.same({ { name = "notes", beginLine = 2, endLine = 5 } }, results)
 		end)
 
 		it("returns false and region info for multiple non-overlapping regions", function()
@@ -54,8 +54,8 @@ describe("MetaFly.view.BufferValidator", function()
 			local hasErrors, results = BufferValidator.validate(lines)
 			assert.is_false(hasErrors)
 			assert.are.same({
-				{ beginLine = 1, endLine = 3 },
-				{ beginLine = 5, endLine = 7 },
+				{ name = "view1", beginLine = 1, endLine = 3 },
+				{ name = "view2", beginLine = 5, endLine = 7 },
 			}, results)
 		end)
 
@@ -122,7 +122,7 @@ describe("MetaFly.view.BufferValidator", function()
 			}
 			local hasErrors, results = BufferValidator.validate(lines)
 			assert.is_false(hasErrors)
-			assert.are.same({ { beginLine = 1, endLine = 2 } }, results)
+			assert.are.same({ { name = "edge", beginLine = 1, endLine = 2 } }, results)
 		end)
 
 		it("returns multiple errors when multiple issues exist", function()
