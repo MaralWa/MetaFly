@@ -54,10 +54,14 @@ function BufferController.refreshViews()
 					vim.log.levels.WARN
 				)
 			else
-				-- Replace lines between begin and end markers (exclusive).
-				-- nvim_buf_set_lines uses 0-based indexing; beginLine and endLine are 1-based.
-				local startIdx = region.beginLine -- 0-based: line after begin marker
-				local endIdx = region.endLine - 1 -- 0-based: line before end marker
+				-- Replace lines between begin and end markers (exclusive of markers).
+				-- BufferValidator returns 1-based line numbers.
+				-- nvim_buf_set_lines uses 0-based start (inclusive) and end (exclusive).
+				-- beginLine (1-based) conveniently equals the 0-based index of the next line,
+				-- i.e. the first content line after the begin marker.
+				-- endLine - 1 (1-based → 0-based) is the exclusive end, stopping before the end marker.
+				local startIdx = region.beginLine
+				local endIdx = region.endLine - 1
 				vim.api.nvim_buf_set_lines(bufnr, startIdx, endIdx, false, viewData)
 				logger.info('Refreshed view "' .. region.name .. '"')
 			end
