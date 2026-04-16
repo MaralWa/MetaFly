@@ -1,4 +1,8 @@
 local YamlHeader = require("MetaFly.model.YamlHeader")
+local BufferValidator = require("MetaFly.view.BufferValidator")
+local ViewFactory = require("MetaFly.view.ViewFactory")
+local config = require("MetaFly.config"):getInstance()
+local logger = config:getLogger("BufferController")
 
 local BufferController = {}
 
@@ -8,6 +12,59 @@ function BufferController:updateMetadata(bufferNumber)
 	local bufferName = vim.fn.bufname(bufferNumber)
 	local metaData = YamlHeader:getFromBuffer(bufferNumber)
 	local fileOfBuffer = vim.fn.GetFile(bufferNumber)
+end
+
+--- Refreshes all MetaFly view regions in the current buffer.
+--- Uses BufferValidator to find view regions, then replaces their content
+--- with the latest data from the database.
+function BufferController.refreshViews()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+	local hasErrors, results = BufferValidator.validate(lines)
+
+	if hasErrors then
+		for _, err in ipairs(results) do
+			logger.error("BufferValidator error at line " .. err.line .. ": " .. err.message)
+		end
+		vim.notify("MetaFly refresh: Buffer enthält fehlerhafte View-Markierungen.", vim.log.levels.ERROR)
+		return
+	end
+
+	if #results == 0 then
+		vim.notify("MetaFly refresh: Keine Views im aktuellen Buffer gefunden.", vim.log.levels.INFO)
+		return
+	end
+
+	-- Process regions from bottom to top so that line number changes
+	-- from earlier replacements do not affect later regions.
+	for i = #results, 1, -1 do
+		local region = results[i]
+		local view = ViewFactory.readFromFile(region.name)
+		if view == nil then
+			vim.notify(
+				'MetaFly refresh: View "' .. region.name .. '" konnte nicht geladen werden.',
+				vim.log.levels.WARN
+			)
+		else
+			local viewData = view:getViewData()
+			if viewData == nil then
+				vim.notify(
+					'MetaFly refresh: Keine Daten für View "' .. region.name .. '" erhalten.',
+					vim.log.levels.WARN
+				)
+			else
+				-- Replace lines between begin and end markers (exclusive).
+				-- nvim_buf_set_lines uses 0-based indexing; beginLine and endLine are 1-based.
+				local startIdx = region.beginLine -- 0-based: line after begin marker
+				local endIdx = region.endLine - 1 -- 0-based: line before end marker
+				vim.api.nvim_buf_set_lines(bufnr, startIdx, endIdx, false, viewData)
+				logger.info('Refreshed view "' .. region.name .. '"')
+			end
+		end
+	end
+
+	vim.notify("MetaFly refresh: Views wurden aktualisiert.", vim.log.levels.INFO)
 end
 
 return BufferController

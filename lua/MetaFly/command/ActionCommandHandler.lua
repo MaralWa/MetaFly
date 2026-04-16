@@ -18,7 +18,7 @@ ActionCommandHandler.lastAction = function()
 end
 
 -- The ordered list of supported actions.
-ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore" }
+ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore", "refresh" }
 
 -- Dispatch table mapping action names to their handler functions.
 -- Populated after the handler functions are defined below.
@@ -115,6 +115,15 @@ function ActionCommandHandler.executeExplore(args)
 	vim.notify("MetaFly explore: " .. tostring(args), vim.log.levels.INFO)
 end
 
+-- Refresh all MetaFly view regions in the current buffer.
+-- Validates the buffer first and replaces outdated view data with fresh results.
+-- @param args  string|nil  Currently unused.
+function ActionCommandHandler.executeRefresh(args)
+	logger.info("MetaFly action: refresh" .. (args and (" args=" .. args) or ""))
+	local bufferController = require("MetaFly.controller.BufferController")
+	bufferController.refreshViews()
+end
+
 -- Wire up the dispatch table so executeAction can resolve handlers by name.
 actionDispatch["open"] = ActionCommandHandler.executeOpen
 actionDispatch["view"] = ActionCommandHandler.executeView
@@ -122,5 +131,6 @@ actionDispatch["select"] = ActionCommandHandler.executeSelect
 actionDispatch["query"] = ActionCommandHandler.executeQuery
 actionDispatch["search"] = ActionCommandHandler.executeSearch
 actionDispatch["explore"] = ActionCommandHandler.executeExplore
+actionDispatch["refresh"] = ActionCommandHandler.executeRefresh
 
 return ActionCommandHandler
