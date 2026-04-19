@@ -21,6 +21,7 @@ end
 
 function PickerView:new(values)
 	local newObject = MetaFlyView.new(self, values)
+	logger.debug("Creating new PickerView with values: " .. tostring(values))
 	setmetatable(newObject, self)
 	newObject.columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" }
 	newObject.from = { "Note", "NoteBox" }
@@ -31,9 +32,6 @@ function PickerView:new(values)
 		newObject.where = "Note.idNoteBox = NoteBox.id"
 	end
 	newObject.inherit = values["inherit"]
-	logger.debug(
-		"Created PickerView with name: " .. newObject.name .. " and where clause: " .. tostring(newObject.where)
-	)
 	return newObject
 end
 
