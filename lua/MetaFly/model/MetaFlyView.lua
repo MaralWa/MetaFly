@@ -9,7 +9,7 @@ local MetaFlyView = {}
 ---@field public columns string|table
 ---@field public from string|table
 ---@field public where string
----@field public inherit string|table
+---@field public inherits string|table
 ---@field public orderBy string|table
 ---@field public limit number
 ---@field public groupBy string|table
@@ -29,14 +29,11 @@ function MetaFlyView:new(values)
 	newObject.from = values["from"]
 	newObject.where = values["where"]
 	newObject.sqlMode = values["sqlMode"]
-	newObject.inherit = values["inherits"]
+	newObject.inherits = values["inherits"]
 	newObject.orderBy = values["orderBy"]
 	newObject.groupBy = values["groupBy"]
 	newObject.limit = values["limit"]
 
-	logger:debug(
-		"Created MetaFlyView with name: " .. newObject.name .. " and where clause: " .. tostring(newObject.where)
-	)
 	return newObject
 end
 
@@ -47,7 +44,7 @@ function MetaFlyView:getSelectStatement()
 		:withColumns(self.columns)
 		:withFrom(self.from)
 		:withWhere(self.where)
-		:withInherits(self.inherit)
+		:withInherits(self.inherits)
 		:withOrderBy(self.orderBy)
 		:withLimit(self.limit)
 		:withGroupBy(self.groupBy)
