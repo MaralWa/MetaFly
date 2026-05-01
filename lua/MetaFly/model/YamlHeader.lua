@@ -160,9 +160,10 @@ function YamlHeader:parseDocument()
 	if self.headerLines == nil then
 		return nil
 	end
-	self.header, error = self:parseYaml(table.concat(self.headerLines, "\n"))
+	local parseErr
+	self.header, parseErr = self:parseYaml(table.concat(self.headerLines, "\n"))
 	if not self.header then
-		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
+		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. parseErr)
 		return nil
 	end
 	if type(self.header) ~= "table" then
