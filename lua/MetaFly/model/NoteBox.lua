@@ -101,7 +101,7 @@ end
 ---@param id number
 ---@return NoteBox | nil
 function NoteBox.getById(id)
-	local selectedNoteBox = database.NoteBox.get(id)
+	local selectedNoteBox = database.NoteBox:get({ where = { id = id } })
 	if #selectedNoteBox == 1 then
 		for _, values in pairs(selectedNoteBox) do
 			return NoteBox:new(values)
