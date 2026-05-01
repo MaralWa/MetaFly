@@ -62,6 +62,7 @@ local function new()
 	self.Note = database.Note
 	self.Metadata = database.Metadata
 	self.MetadataToNote = database.MetadataToNote
+	self.JsonDataToNote = database.JsonDataToNote
 	self.DB = nil
 	return self
 end
@@ -87,6 +88,7 @@ function database:init()
 		Note = self.Note,
 		Metadata = self.Metadata,
 		MetadataToNote = self.MetadataToNote,
+		JsonDataToNote = self.JsonDataToNote,
 		opt = {},
 	})
 end
