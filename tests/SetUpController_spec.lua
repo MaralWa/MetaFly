@@ -29,6 +29,12 @@ describe("Database", function()
 	local config = Config:getInstance()
 	config:setOptions(testConfig)
 	local logger = config:getLogger()
+
+	-- Ensure required directories exist and start with a fresh database
+	vim.fn.mkdir(vim.fn.fnamemodify(testConfig.database, ":h"), "p")
+	vim.fn.mkdir(vim.fn.fnamemodify(testConfig.logger.logFile, ":h"), "p")
+	os.remove(testConfig.database)
+
 	local db = require("MetaFly.model.database"):getInstance()
 	logger.info("MetaFly Database initialized at: " .. db:getUri())
 
