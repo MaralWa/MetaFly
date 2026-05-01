@@ -38,15 +38,16 @@ database.Metadata = tbl("MetaData", {
 	type = { "text" },
 })
 
----@class MetadataToNote
-database.MetadataToNote = tbl("MetaDataToNote", {
+---@class MetaDataToNote
+database.MetaDataToNote = tbl("MetaDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
 	idNote = { "integer", reference = "Note.id", required = true },
+	index = { "integer" },
 	value = { "text" },
 })
 
----@class MetadataToNote
+---@class JsonDataToNote
 database.JsonDataToNote = tbl("JsonDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
@@ -61,7 +62,7 @@ local function new()
 	self.NoteBox = database.NoteBox
 	self.Note = database.Note
 	self.Metadata = database.Metadata
-	self.MetadataToNote = database.MetadataToNote
+	self.MetaDataToNote = database.MetaDataToNote
 	self.DB = nil
 	return self
 end
@@ -81,12 +82,13 @@ function database:init()
 		self.uri = config.database
 		self.command = "sqlite3 " .. config.database
 	end
-	self.DB = sqlite({
+	self.DB = sqlite:extend({
 		uri = self.uri,
 		NoteBox = self.NoteBox,
 		Note = self.Note,
 		Metadata = self.Metadata,
-		MetadataToNote = self.MetadataToNote,
+		MetaDataToNote = self.MetaDataToNote,
+		JsonDataToNote = self.JsonDataToNote,
 		opt = {},
 	})
 end
@@ -130,6 +132,50 @@ function database:callSql(statement, mode)
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
+end
+
+function database:executeQuery(statement, mode)
+	local sqlResult = self:callSql(statement, mode)
+	local lines = {}
+
+	if sqlResult ~= nil then
+		for line in sqlResult:lines() do
+			table.insert(lines, line)
+		end
+		sqlResult:close()
+	else
+		lines = { "No results returned" }
+	end
+	return lines
+end
+
+function database:executeQuery(statement, mode)
+	local sqlResult = self:callSql(statement, mode)
+	local lines = {}
+
+	if sqlResult ~= nil then
+		for line in sqlResult:lines() do
+			table.insert(lines, line)
+		end
+		sqlResult:close()
+	else
+		lines = { "No results returned" }
+	end
+
+	return lines
+end
+
+function database:getQueryResultAsTable(statement)
+	local resultLines = self:executeQuery(statement, "json")
+	local jsonResult = table.concat(resultLines, "")
+
+	local ok, data = pcall(vim.json.decode, jsonResult)
+	if not ok then
+		print("Error decoding JSON: " .. data)
+		return nil
+	end
+
+	return data
 end
 
 function database:getPropertyOfCurrentBuffer(property)

@@ -30,6 +30,24 @@ local Note = {
 	tags = "",
 }
 
+function Note.isMetaData(property)
+	if
+		property == "id"
+		or property == "idNoteBox"
+		or property == "noteId"
+		or property == "noteId"
+		or property == "title"
+		or property == "type"
+		or property == "status"
+		or property == "fileName"
+		or property == "created"
+		or property == "lastUpdated"
+	then
+		return false
+	end
+	return true
+end
+
 ---@param values table
 ---@return Note
 function Note:new(values)

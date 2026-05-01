@@ -6,7 +6,6 @@ local logger = nil
 local NoteData = {
 	title = "title",
 	type = "type",
-	context = "context",
 	status = "status",
 	id = "noteId",
 }
@@ -30,9 +29,9 @@ local YamlHeader = {
 	noteData = {
 		idNoteBox = "",
 		noteId = "",
-		type = "note",
+		title = "",
+		type = "",
 		status = "",
-		context = "",
 		created = os.time(),
 	},
 	metaData = {},
@@ -42,7 +41,7 @@ local YamlHeader = {
 ---@param fileName string
 ---@param bufferNumber number
 function YamlHeader:new(fileName, bufferNumber)
-	logger = require("MetaFly.config"):getInstance():getLogger("YamlHeader")
+	logger = require("MetaFly.config"):getInstance():getLogger()
 	local newObject = setmetatable({}, self)
 	self.__index = self
 	newObject.fileName = fileName
@@ -53,7 +52,7 @@ function YamlHeader:new(fileName, bufferNumber)
 	newObject.mappings = {}
 	newObject.noteData = {
 		idNoteBox = "",
-		type = "note",
+		type = "",
 		status = "",
 		context = "",
 		created = os.time(),
@@ -99,7 +98,7 @@ function YamlHeader:getTitle()
 	end
 	-- use first alias as title if any aliases are defined
 	if self.header.aliases ~= nil and type(self.header.aliases) == "table" then
-		for key, value in pairs(self.header.aliases) do
+		for _, value in pairs(self.header.aliases) do
 			if type(value) ~= "table" then
 				return value
 			end
@@ -157,8 +156,7 @@ function YamlHeader:asJson(value)
 	return nil
 end
 
----@param noteBox NoteBox
-function YamlHeader:parseDocument(noteBox)
+function YamlHeader:parseDocument()
 	if self.headerLines == nil then
 		return nil
 	end
@@ -181,8 +179,6 @@ function YamlHeader:parseDocument(noteBox)
 	if self.noteData.title == nil or self.noteData.title == "" then
 		self.noteData.title = self:getTitle()
 	end
-	self.noteData.idNoteBox = "" .. noteBox:getId()
-	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
 	if self.header.id ~= nil and type(self.header.id) ~= "table" then
 		self.noteData.noteId = "" .. self.header.id
 	end

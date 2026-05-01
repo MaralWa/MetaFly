@@ -62,4 +62,9 @@ function JsonDataToNote:update(json)
 	end
 end
 
+function JsonDataToNote.delete(conditions)
+	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
+	sqlite.JsonDataToNoe:remove({ where = conditions })
+end
+
 return JsonDataToNote

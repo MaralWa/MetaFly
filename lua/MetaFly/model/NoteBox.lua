@@ -76,11 +76,10 @@ end
 
 --- Intert an entry in table NoteBox
 ---@param row table
----@return NoteBox|{ [unknown]: any }
+---@return NoteBox | nil the inserted NoteBox or nil if the insert failed
 function NoteBox.insert(row)
 	local id = database.NoteBox:insert(row)
-	row.id = id
-	return NoteBox:new(row)
+	return NoteBox.getById(id)
 end
 
 ---@param  aRow table
@@ -100,6 +99,7 @@ end
 
 --- return the NoteBox with the given id
 ---@param id number
+---@return NoteBox | nil
 function NoteBox.getById(id)
 	local selectedNoteBox = database.NoteBox.get(id)
 	if #selectedNoteBox == 1 then
