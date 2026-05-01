@@ -1,3 +1,4 @@
+local database = require("MetaFly.model.database")
 local logger = require("MetaFly.config"):getInstance():getLogger("MetaDataToNote")
 
 ---@class MetaDataToNote
@@ -37,9 +38,8 @@ end
 ---@return MetaDataToNote
 function MetaDataToNote.get(aIdMetaData, aIdNote, aIndex)
 	logger.fmt_debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote, index = aIndex }
-	local entries = sqlite.MetaDataToNote:get({ where = row })
+	local entries = database.MetaDataToNote:get({ where = row })
 	logger.fmt_debug(
 		"Found %d entries for MetaDataToNote with idMetaData %d and idNote %d",
 		#entries,
@@ -57,20 +57,17 @@ end
 
 ----@param conditins table
 function MetaDataToNote.delete(conditions)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	sqlite.MetaDataToNote:remove({ where = conditions })
+	database.MetaDataToNote:remove({ where = conditions })
 end
 
 function MetaDataToNote.count(conditions)
 	print("Counting MetaDataToNote with conditions: " .. vim.inspect(conditions))
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	local results = sqlite.MetaDataToNote:get({ where = conditions })
+	local results = database.MetaDataToNote:get({ where = conditions })
 	return #results
 end
 
 ---@param newValue string
 function MetaDataToNote:update(newValue)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	logger.fmt_debug(
 		"Updating MetaDataToNote with id %d, idMetaData %d, idNote %d, value %s",
 		self.id,
@@ -83,9 +80,9 @@ function MetaDataToNote:update(newValue)
 		newRow.idMetaData = self.idMetaData
 		newRow.idNote = self.idNote
 		newRow.value = newValue
-		self.id = sqlite.MetaDataToNote:insert(newRow)
+		self.id = database.MetaDataToNote:insert(newRow)
 	else
-		sqlite.MetaDataToNote:update({
+		database.MetaDataToNote:update({
 			where = { id = self.id },
 			set = { value = newValue },
 		})

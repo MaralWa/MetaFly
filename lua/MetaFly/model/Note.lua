@@ -113,24 +113,19 @@ end
 ---@return Note | nil
 function Note.saveValues(values)
 	logger.debug("Saving note data: " .. vim.inspect(values))
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	if not sqlite then
-		logger:debug("Failed to get sqlite instance")
-		return nil
-	end
 	local row = { idNoteBox = values["idNoteBox"], noteId = values["noteId"] }
-	local selectedRow = sqlite.Note:get({
+	local selectedRow = database.Note:get({
 		where = row,
 	})
 	local idNote = nil
 	if #selectedRow == 0 then
-		idNote = sqlite.Note:insert(values)
+		idNote = database.Note:insert(values)
 
 		values.id = idNote
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
-			sqlite.Note:update({
+			database.Note:update({
 				where = { id = rowValues.id },
 				set = values,
 			})
@@ -144,12 +139,11 @@ end
 
 ---@param values table
 function Note:upate(values)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	values["lastUpdated"] = os.time()
 	if self.id == -1 then
-		self.id = sqlite.Note:insert(values)
+		self.id = database.Note:insert(values)
 	else
-		sqlite.Note:update({
+		database.Note:update({
 			where = { id = self.id },
 			set = values,
 		})
