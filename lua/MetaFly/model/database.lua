@@ -63,6 +63,7 @@ local function new()
 	self.Note = database.Note
 	self.Metadata = database.Metadata
 	self.MetaDataToNote = database.MetaDataToNote
+	self.JsonDataToNote = database.JsonDataToNote
 	self.DB = nil
 	return self
 end

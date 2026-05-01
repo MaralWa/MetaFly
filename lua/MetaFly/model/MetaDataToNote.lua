@@ -39,7 +39,7 @@ function MetaDataToNote.get(aIdMetaData, aIdNote, aIndex)
 	logger.fmt_debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote, index = aIndex }
-	local entries = sqlite.MetadataToNote:get({ where = row })
+	local entries = sqlite.MetaDataToNote:get({ where = row })
 	logger.fmt_debug(
 		"Found %d entries for MetaDataToNote with idMetaData %d and idNote %d",
 		#entries,
@@ -58,13 +58,13 @@ end
 ----@param conditins table
 function MetaDataToNote.delete(conditions)
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	sqlite.MetadataToNote:remove({ where = conditions })
+	sqlite.MetaDataToNote:remove({ where = conditions })
 end
 
 function MetaDataToNote.count(conditions)
 	print("Counting MetaDataToNote with conditions: " .. vim.inspect(conditions))
 	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	local results = sqlite.MetadataToNote:get({ where = conditions })
+	local results = sqlite.MetaDataToNote:get({ where = conditions })
 	return #results
 end
 
@@ -83,9 +83,9 @@ function MetaDataToNote:update(newValue)
 		newRow.idMetaData = self.idMetaData
 		newRow.idNote = self.idNote
 		newRow.value = newValue
-		self.id = sqlite.MetadataToNote:insert(newRow)
+		self.id = sqlite.MetaDataToNote:insert(newRow)
 	else
-		sqlite.MetadataToNote:update({
+		sqlite.MetaDataToNote:update({
 			where = { id = self.id },
 			set = { value = newValue },
 		})
