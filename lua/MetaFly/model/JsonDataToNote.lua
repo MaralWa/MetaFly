@@ -60,8 +60,13 @@ function JsonDataToNote:update(json)
 	end
 end
 
-function JsonDataToNote.delete(conditions)
-	database.JsonDataToNote:remove({ where = conditions })
+---@param aIdNote number
+---@param aMetaDataIds number[]
+function JsonDataToNote.deleteOther(aIdNote, aMetaDataIds)
+	database.MetaDataToNote.db:eval(
+		"DELETE from MetaDataToNote where idNote = :idNote AND idMetaData not in (:metaDataIds)",
+		{ idNote = aIdNote, metaDataIds = aMetaDataIds }
+	)
 end
 
 return JsonDataToNote

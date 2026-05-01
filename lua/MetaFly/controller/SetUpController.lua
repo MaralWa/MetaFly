@@ -55,24 +55,29 @@ function SetUpController:saveMetaData(note, metaData, values)
 				.. #values
 				.. " values provided. Deleting old meta data."
 		)
-		MetaDataToNote.delete({ idMetaData = metaData:getId(), idNote = note:getId(), index = { ">", #values } })
+		MetaDataToNote.delete({ idMetaData = metaData:getId(), idNote = note:getId(), position = { ">", #values } })
 	end
 
 	logger.debug(
 		"Meta data count for meta data " .. metaData.name .. " and note " .. note:getId() .. " is " .. metaDataCount
 	)
 
-	for index, value in pairs(values) do
-		logger.debug("Meta data value " .. index .. ": " .. value)
-		local metaDataToNote = MetaDataToNote.get(metaData:getId(), note:getId(), index)
+	for position, value in pairs(values) do
+		logger.debug("Meta data value " .. position .. ": " .. value)
+		local metaDataToNote = MetaDataToNote.get(metaData:getId(), note:getId(), position)
 		if metaDataToNote ~= nil then
 			logger.debug(
-				"Updating meta data " .. metaData.name .. " for note " .. note:getId() .. " and index " .. index
+				"Updating meta data " .. metaData.name .. " for note " .. note:getId() .. " and position " .. position
 			)
 			metaDataToNote:update(value)
 		else
 			logger.error(
-				"Failed to get meta data " .. metaData.name .. " for note " .. note:getId() .. " and index " .. index
+				"Failed to get meta data "
+					.. metaData.name
+					.. " for note "
+					.. note:getId()
+					.. " and position "
+					.. position
 			)
 		end
 	end
@@ -120,8 +125,8 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 		end
 		self:saveMetaData(note, metaDataRow, metaDataValues)
 	end
-	MetaDataToNote.delete({ idNote = note:getId(), idMetaData = { "not in", metaDataIds } })
-	JsonDataToNote.delete({ idNote = note:getId(), idMetaData = { "not in", metaDataIds } })
+	MetaDataToNote.deleteOther(note:getId(), metaDataIds)
+	JsonDataToNote.deleteOther(note:getId(), metaDataIds)
 end
 
 ---@param noteData table

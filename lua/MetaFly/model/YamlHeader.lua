@@ -1,7 +1,7 @@
 local lyaml = require("lyaml")
 local Config = require("MetaFly.config")
 
-local logger = nil
+local logger = Config:getInstance():getLogger()
 
 local NoteData = {
 	title = "title",
@@ -41,7 +41,6 @@ local YamlHeader = {
 ---@param fileName string
 ---@param bufferNumber number
 function YamlHeader:new(fileName, bufferNumber)
-	logger = require("MetaFly.config"):getInstance():getLogger()
 	local newObject = setmetatable({}, self)
 	self.__index = self
 	newObject.fileName = fileName
@@ -160,9 +159,10 @@ function YamlHeader:parseDocument()
 	if self.headerLines == nil then
 		return nil
 	end
-	self.header, error = self:parseYaml(table.concat(self.headerLines, "\n"))
+	local parseError
+	self.header, parseError = self:parseYaml(table.concat(self.headerLines, "\n"))
 	if not self.header then
-		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
+		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. parseError)
 		return nil
 	end
 	if type(self.header) ~= "table" then

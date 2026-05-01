@@ -43,7 +43,7 @@ database.MetaDataToNote = tbl("MetaDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
 	idNote = { "integer", reference = "Note.id", required = true },
-	index = { "integer" },
+	position = { "integer", required = true },
 	value = { "text" },
 })
 
