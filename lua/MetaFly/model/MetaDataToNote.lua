@@ -65,7 +65,7 @@ function MetaDataToNote.deleteOther(aIdNote, aMetaDataIds)
 		.. ")"
 
 	print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
-	database.MetaDataToNote.db:eval(deleteQuery)
+	database:getInstance():select(deleteQuery)
 end
 
 function MetaDataToNote.count(conditions)

@@ -83,7 +83,7 @@ function database:init()
 		self.uri = config.database
 		self.command = "sqlite3 " .. config.database
 	end
-	self.DB = sqlite:extend({
+	self.DB = sqlite({
 		uri = self.uri,
 		NoteBox = self.NoteBox,
 		Note = self.Note,
@@ -218,8 +218,9 @@ end
 
 ---comment
 ---@param statement string
-function database:select(statement)
-	return self.DB:eval(statement)
+funct:ion database:select(statement)
+  self.DB:select(statement)
+	-- return self.DB:eval(statement)
 end
 
 return database
