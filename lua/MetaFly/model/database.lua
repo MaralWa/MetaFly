@@ -90,7 +90,7 @@ function database:init()
 		Metadata = self.Metadata,
 		MetaDataToNote = self.MetaDataToNote,
 		JsonDataToNote = self.JsonDataToNote,
-		opt = {},
+		opts = { keep_open = true },
 	})
 end
 
