@@ -90,7 +90,7 @@ function database:init()
 		Metadata = self.Metadata,
 		MetaDataToNote = self.MetaDataToNote,
 		JsonDataToNote = self.JsonDataToNote,
-		opt = {},
+		opts = { keep_open = true },
 	})
 end
 
@@ -133,21 +133,6 @@ function database:callSql(statement, mode)
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
-end
-
-function database:executeQuery(statement, mode)
-	local sqlResult = self:callSql(statement, mode)
-	local lines = {}
-
-	if sqlResult ~= nil then
-		for line in sqlResult:lines() do
-			table.insert(lines, line)
-		end
-		sqlResult:close()
-	else
-		lines = { "No results returned" }
-	end
-	return lines
 end
 
 function database:executeQuery(statement, mode)
@@ -216,11 +201,26 @@ function database:getPropertyOfCurrentBuffer(property)
 	end
 end
 
+---@param aTable string
+---@param aIdNote number
+---@param aMetaDataIds number[]
+function database:deleteOther(aTable, aIdNote, aMetaDataIds)
+	local deleteQuery = "DELETE from "
+		.. aTable
+		.. " where idNote = "
+		.. aIdNote
+		.. " AND idMetaData not in ("
+		.. table.concat(aMetaDataIds, ",")
+		.. ")"
+
+	print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
+	self:select(deleteQuery)
+end
+
 ---comment
 ---@param statement string
-funct:ion database:select(statement)
-  self.DB:select(statement)
-	-- return self.DB:eval(statement)
+function database:select(statement)
+	return self.DB:eval(statement)
 end
 
 return database

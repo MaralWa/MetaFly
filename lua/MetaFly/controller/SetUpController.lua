@@ -1,4 +1,5 @@
 local Config = require("MetaFly.config")
+local database = require("MetaFly.model.database")
 local NoteBox = require("MetaFly.model.NoteBox")
 local Note = require("MetaFly.model.Note")
 local MetaData = require("MetaFly.model.MetaData")
@@ -86,6 +87,29 @@ function SetUpController:saveMetaData(note, metaData, values)
 	jsonDataToNote:update(vim.json.encode(values))
 end
 
+---comment
+---@param note Note
+---@param metaData table
+function SetUpController:updateMetaData(note, metaData)
+	local metaDataIds = {}
+	for name, value in pairs(metaData) do
+		local metaDataRow = MetaData.getByName(name)
+		table.insert(metaDataIds, metaDataRow:getId())
+		local metaDataValues = {}
+		if type(value) == "string" then
+			metaDataValues = { value }
+		elseif type(value) == "number" or type(value) == "boolean" then
+			metaDataValues = { tostring(value) }
+		elseif type(value) == "table" and #value > 0 then
+			metaDataValues = value
+		end
+		self:saveMetaData(note, metaDataRow, metaDataValues)
+	end
+
+	database:getInstance():deleteOther("MetaDataToNote", note:getId(), metaDataIds)
+	database:getInstance():deleteOther("JsonDataToNote", note:getId(), metaDataIds)
+end
+
 ---@param fileName string
 ---@param noteBox NoteBox
 ---@param yamlHeader YamlHeader
@@ -111,22 +135,8 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 		logger.error("Failed to save note for file: " .. fileName)
 		return
 	end
-	local metaDataIds = {}
-	for name, value in pairs(yamlHeader:getMetaData()) do
-		local metaDataRow = MetaData.getByName(name)
-		table.insert(metaDataIds, metaDataRow:getId())
-		local metaDataValues = {}
-		if type(value) == "string" then
-			metaDataValues = { value }
-		elseif type(value) == "number" or type(value) == "boolean" then
-			metaDataValues = { tostring(value) }
-		elseif type(value) == "table" and #value > 0 then
-			metaDataValues = value
-		end
-		self:saveMetaData(note, metaDataRow, metaDataValues)
-	end
-	MetaDataToNote.deleteOther(note:getId(), metaDataIds)
-	JsonDataToNote.deleteOther(note:getId(), metaDataIds)
+
+	self:updateMetaData(note, yamlHeader:getMetaData())
 end
 
 ---@param noteData table
@@ -179,7 +189,7 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 			or string.sub(noteBoxConfig["path"], 1, -2)
 		local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
 		logger.debug("NoteBox ID " .. noteBox:getId())
-		logger.debug("NoteBox lastUpdated " .. noteBox.lastUpdated)
+		logger.debug("NoteBox lastUpdated " .. noteBox:getLastUpdated())
 		local idNoteBox = noteBox:getId()
 		local whereNotes = {}
 		whereNotes["idNoteBox"] = idNoteBox
