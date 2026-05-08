@@ -89,4 +89,19 @@ function MetaDataToNote.delete(conditions)
 	return database.MetaDataToNote:remove({ where = conditions })
 end
 
+---Deletes all MetaDataToNote entries for a given metaData/note combination
+---whose position exceeds maxPosition.
+---@param idMetaData number
+---@param idNote number
+---@param maxPosition number
+function MetaDataToNote.deleteByPosition(idMetaData, idNote, maxPosition)
+	local deleteQuery = string.format(
+		"DELETE FROM MetaDataToNote WHERE idMetaData = %d AND idNote = %d AND position > %d",
+		idMetaData,
+		idNote,
+		maxPosition
+	)
+	database:getInstance():select(deleteQuery)
+end
+
 return MetaDataToNote

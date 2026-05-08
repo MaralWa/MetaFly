@@ -56,7 +56,7 @@ function SetUpController:saveMetaData(note, metaData, values)
 				.. #values
 				.. " values provided. Deleting old meta data."
 		)
-		MetaDataToNote.delete({ idMetaData = metaData:getId(), idNote = note:getId(), position = { ">", #values } })
+		MetaDataToNote.deleteByPosition(metaData:getId(), note:getId(), #values)
 	end
 
 	logger.debug(

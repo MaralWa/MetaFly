@@ -37,7 +37,7 @@ describe("Database", function()
 
 	-- Ensure required directories exist and start with a fresh database
 	vim.fn.mkdir(vim.fn.fnamemodify(testConfig.database, ":h"), "p")
-	--vim.fn.mkdir(vim.fn.fnamemodify(testConfig.logger.logFile, ":h"), "p")
+	vim.fn.mkdir(vim.fn.fnamemodify(testConfig.logger.logFile, ":h"), "p")
 	os.remove(testConfig.database)
 
 	local db = require("MetaFly.model.database"):getInstance()
@@ -63,7 +63,7 @@ describe("Database", function()
 			"Expected 8 notes in note box " .. noteBox:getName() .. ", but found " .. numberOfNotes
 		)
 
-		local note = Note.getNoteWithId(idNoteBox, "240302011450")
+		local note = Note.getNoteWithId(noteBox:getId(), "240302011450")
 		assert.is_not_nil(note, "Expected to find a note with id '240302011450' in the database")
 
 		local numberOfMetaData = MetaDataToNote.count({ idNote = note:getId() })
