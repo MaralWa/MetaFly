@@ -1,16 +1,17 @@
-local logger = require("MetaFly.config"):getInstance():getLogger("MetaDataToNote")
+local database = require("MetaFly.model.database")
+local logger = require("MetaFly.config"):getInstance():getLogger()
 
 ---@class MetaDataToNote
 ---@field private id number
 ---@field  idMetaData number
 ---@field  idNote number
----@field index number
+---@field position number
 ---@field  value string
-MetaDataToNote = {
+local MetaDataToNote = {
 	id = 0,
 	idMetaData = 0,
 	idNote = 0,
-	index = 0,
+	position = 0,
 	value = "",
 }
 
@@ -22,7 +23,7 @@ function MetaDataToNote:new(row)
 	newObject.idMetaData = row["idMetaData"]
 	newObject.idNote = row["idNote"]
 	newObject.value = row["value"]
-	newObject.index = row["index"]
+	newObject.position = row["position"]
 	return newObject
 end
 
@@ -33,12 +34,12 @@ end
 
 ---@param aIdMetaData number
 ---@param aIdNote number
+---@param aPosition number
 ---@return MetaDataToNote
-function MetaDataToNote.get(aIdMetaData, aIdNote)
+function MetaDataToNote.get(aIdMetaData, aIdNote, aPosition)
 	logger.fmt_debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
-	local entries = sqlite.MetadataToNote:get({ where = row })
+	local row = { idMetaData = aIdMetaData, idNote = aIdNote, position = aPosition }
+	local entries = database.MetaDataToNote:get({ where = row })
 	logger.fmt_debug(
 		"Found %d entries for MetaDataToNote with idMetaData %d and idNote %d",
 		#entries,
@@ -51,31 +52,56 @@ function MetaDataToNote.get(aIdMetaData, aIdNote)
 			return MetaDataToNote:new(entry)
 		end
 	end
-	return MetaDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote })
+	return MetaDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote, position = aPosition, value = "" })
+end
+
+function MetaDataToNote.count(conditions)
+	local results = database.MetaDataToNote:get({ where = conditions })
+	return #results
 end
 
 ---@param newValue string
 function MetaDataToNote:update(newValue)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	logger.fmt_debug(
-		"Updating MetaDataToNote with id %d, idMetaData %d, idNote %d, value %s",
+		"Updating MetaDataToNote with id %d, idMetaData %d, idNote %d, position %d, value %s",
 		self.id,
 		self.idMetaData,
 		self.idNote,
+		self.position,
 		newValue
 	)
 	if self.id == -1 then
 		local newRow = {}
 		newRow.idMetaData = self.idMetaData
 		newRow.idNote = self.idNote
+		newRow.position = self.position
 		newRow.value = newValue
-		self.id = sqlite.MetadataToNote:insert(newRow)
+		self.id = database.MetaDataToNote:insert(newRow)
 	else
-		sqlite.MetadataToNote:update({
+		database.MetaDataToNote:update({
 			where = { id = self.id },
 			set = { value = newValue },
 		})
 	end
+end
+
+function MetaDataToNote.delete(conditions)
+	return database.MetaDataToNote:remove({ where = conditions })
+end
+
+---Deletes all MetaDataToNote entries for a given metaData/note combination
+---whose position exceeds maxPosition.
+---@param idMetaData number
+---@param idNote number
+---@param maxPosition number
+function MetaDataToNote.deleteByPosition(idMetaData, idNote, maxPosition)
+	local deleteQuery = string.format(
+		"DELETE FROM MetaDataToNote WHERE idMetaData = %d AND idNote = %d AND position > %d",
+		idMetaData,
+		idNote,
+		maxPosition
+	)
+	database:getInstance():select(deleteQuery)
 end
 
 return MetaDataToNote

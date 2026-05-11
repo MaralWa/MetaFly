@@ -30,6 +30,24 @@ local Note = {
 	tags = "",
 }
 
+function Note.isMetaData(property)
+	if
+		property == "id"
+		or property == "idNoteBox"
+		or property == "noteId"
+		or property == "noteId"
+		or property == "title"
+		or property == "type"
+		or property == "status"
+		or property == "fileName"
+		or property == "created"
+		or property == "lastUpdated"
+	then
+		return false
+	end
+	return true
+end
+
 ---@param values table
 ---@return Note
 function Note:new(values)
@@ -66,11 +84,16 @@ function Note:getNoteId()
 	return self.noteId
 end
 
----@param pWhere  table
+---@param pWhere  table|nil
 ---@return integer
 function Note.count(pWhere)
-	local selectedRows = database.Note:get({ where = pWhere })
-	return #selectedRows
+	local rows
+	if pWhere == nil then
+		rows = database.Note:get()
+	else
+		rows = database.Note:get({ where = pWhere })
+	end
+	return #rows
 end
 
 ---@param idNoteBox number
@@ -95,24 +118,19 @@ end
 ---@return Note | nil
 function Note.saveValues(values)
 	logger.debug("Saving note data: " .. vim.inspect(values))
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
-	if not sqlite then
-		logger:debug("Failed to get sqlite instance")
-		return nil
-	end
 	local row = { idNoteBox = values["idNoteBox"], noteId = values["noteId"] }
-	local selectedRow = sqlite.Note:get({
+	local selectedRow = database.Note:get({
 		where = row,
 	})
 	local idNote = nil
 	if #selectedRow == 0 then
-		idNote = sqlite.Note:insert(values)
+		idNote = database.Note:insert(values)
 
 		values.id = idNote
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
-			sqlite.Note:update({
+			database.Note:update({
 				where = { id = rowValues.id },
 				set = values,
 			})
@@ -126,12 +144,11 @@ end
 
 ---@param values table
 function Note:upate(values)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	values["lastUpdated"] = os.time()
 	if self.id == -1 then
-		self.id = sqlite.Note:insert(values)
+		self.id = database.Note:insert(values)
 	else
-		sqlite.Note:update({
+		database.Note:update({
 			where = { id = self.id },
 			set = values,
 		})
