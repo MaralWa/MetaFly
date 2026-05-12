@@ -129,7 +129,7 @@ function database:callSql(statement, mode)
 	if mode ~= nil then
 		command = command .. " -" .. mode
 	end
-	print("Executing command: " .. command .. ' "' .. statement .. '"')
+	-- print("Executing command: " .. command .. ' "' .. statement .. '"')
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
@@ -157,7 +157,7 @@ function database:getQueryResultAsTable(statement)
 
 	local ok, data = pcall(vim.json.decode, jsonResult)
 	if not ok then
-		print("Error decoding JSON: " .. data)
+		-- print("Error decoding JSON: " .. data)
 		return nil
 	end
 
@@ -174,7 +174,6 @@ function database:getPropertyOfCurrentBuffer(property)
 		.. "fullFileName = '"
 		.. fileName
 		.. "'"
-	print("Executing SQL: " .. statement)
 
 	local sqlResult = self:callSql(statement, "json")
 	local jsonResult = ""
@@ -185,7 +184,7 @@ function database:getPropertyOfCurrentBuffer(property)
 		end
 		sqlResult:close()
 	end
-	print("SQL Result: " .. jsonResult)
+	-- print("SQL Result: " .. jsonResult)
 
 	if jsonResult == nil or jsonResult == "" then
 		return nil
@@ -193,7 +192,7 @@ function database:getPropertyOfCurrentBuffer(property)
 
 	local ok, data = pcall(vim.json.decode, jsonResult)
 	if not ok then
-		print("Error decoding JSON: " .. data)
+		-- print("Error decoding JSON: " .. data)
 		return nil
 	end
 	if #data == 1 then
@@ -213,7 +212,7 @@ function database:deleteOther(aTable, aIdNote, aMetaDataIds)
 		.. table.concat(aMetaDataIds, ",")
 		.. ")"
 
-	print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
+	-- print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
 	self:select(deleteQuery)
 end
 
