@@ -10,7 +10,7 @@ command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
 command! MetaFlySnacksNotes lua require('MetaFly.picker.SnacksNotePicker').notesView()
 command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
 
-command! -nargs=* -complete=custom,MetaFlyComplete MetaFly call s:MetaFlyDispatch(<f-args>)
+command! -nargs=* -complete=customlist,MetaFlyComplete MetaFly call s:MetaFlyDispatch(<f-args>)
 
 function! s:MetaFlyDispatch(subcommand, ...)
     let l:args = join(a:000, ' ')
