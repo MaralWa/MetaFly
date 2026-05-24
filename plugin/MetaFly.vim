@@ -5,11 +5,6 @@ if exists("g:loaded_metafly")
     finish
 endif
 
-" Legacy commands for backward compatibility
-command! MetaFlyNotes lua require('MetaFly.picker.NotePicker').notesView()
-command! MetaFlySnacksNotes lua require('MetaFly.picker.SnacksNotePicker').notesView()
-command! MetaFlyUri lua require('MetaFly.model.database'):getInstance():printUri()
-
 command! -nargs=* -complete=customlist,MetaFlyComplete MetaFly call s:MetaFlyDispatch(<f-args>)
 
 function! s:MetaFlyDispatch(subcommand, ...)
