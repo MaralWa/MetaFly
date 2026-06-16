@@ -130,6 +130,7 @@ function Note.saveValues(values)
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
+			logger.debug("Note already exists with values " .. vim.inspect(rowValues))
 			database.Note:update({
 				where = { id = rowValues.id },
 				set = values,

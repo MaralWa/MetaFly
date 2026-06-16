@@ -91,6 +91,7 @@ end
 ---@param note Note
 ---@param metaData table
 function SetUpController:updateMetaData(note, metaData)
+	logger.debug("Updating meta data for note " .. note:getId() .. " with meta data: " .. vim.inspect(metaData))
 	local metaDataIds = {}
 	for name, value in pairs(metaData) do
 		local metaDataRow = MetaData.getByName(name)
