@@ -32,4 +32,9 @@ endfunction
 
 let g:loaded_metafly = 1
 
+augroup MetaFlyBufWrite
+    autocmd!
+    autocmd BufWritePost * call luaeval('require("MetaFly.controller.BufferController").updateMetadata(_A)', expand('<abuf>') + 0)
+augroup END
+
 

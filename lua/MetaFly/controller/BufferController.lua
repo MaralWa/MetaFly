@@ -1,23 +1,40 @@
 local YamlHeader = require("MetaFly.model.YamlHeader")
+local NoteBox = require("MetaFly.model.NoteBox")
 local BufferValidator = require("MetaFly.view.BufferValidator")
 local ViewFactory = require("MetaFly.view.ViewFactory")
+local DatabaseController = require("MetaFly.controller.DatabaseController")
 local config = require("MetaFly.config"):getInstance()
 local logger = config:getLogger("BufferController")
 
 local BufferController = {}
 
----@param bufferNumber number of the buffer whose
+---@param bufferNumber number number of the buffer to update
 function BufferController.updateMetadata(bufferNumber)
-	local bufferInfo = vim.fn.bufinfo(bufferNumber)
 	local bufferName = vim.fn.bufname(bufferNumber)
+	if bufferName == nil or bufferName == "" then
+		logger.debug("No file name for buffer " .. bufferNumber)
+		return
+	end
 
-	local noteBox = self.getNoteBoxOfFile(bufferName)
-	if noteBox == nil then
+	local noteBoxConfig = BufferController.getNoteBoxOfFile(bufferName)
+	if noteBoxConfig == nil then
 		logger.debug("No NoteBox found for buffer " .. bufferName)
 		return
 	end
-	local metaData = YamlHeader:getFromBuffer(bufferNumber)
-	local fileOfBuffer = vim.fn.GetFile(bufferNumber)
+
+	local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
+	if noteBox == nil then
+		logger.error("Could not get NoteBox from database for: " .. noteBoxConfig.name)
+		return
+	end
+
+	local yamlHeader, errorMsg = YamlHeader:getFromBuffer(bufferNumber)
+	if errorMsg ~= nil then
+		logger.debug("Cannot read YAML header from buffer " .. bufferNumber .. ": " .. errorMsg)
+		return
+	end
+
+	DatabaseController.updateNote(bufferName, noteBox, yamlHeader)
 end
 
 ---@param fileName string of the buffer whose

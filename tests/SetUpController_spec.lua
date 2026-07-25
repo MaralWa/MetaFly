@@ -45,6 +45,7 @@ describe("Database", function()
 
 	-- Create the SetUpController instance that performs the actual scanning
 	local setUpController = require("MetaFly.controller.SetUpController"):new()
+	local databaseController = require("MetaFly.controller.DatabaseController")
 	it("Scanning of single note", function()
 		assert.is_string(db:getUri())
 		assert.equals("tests/TestData/MetaFly/metadata.db", db:getUri())
@@ -83,7 +84,7 @@ describe("Database", function()
 			property = { "second value", "third value" },
 			author = "Victor Hugo",
 		}
-		setUpController:updateMetaData(note, changedMetaData)
+		databaseController.updateMetaData(note, changedMetaData)
 
 		local numberOfMetaData = MetaDataToNote.count({ idNote = note:getId() })
 		assert.is_true(

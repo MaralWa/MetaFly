@@ -129,4 +129,52 @@ describe("MetaFly.controller.BufferController", function()
 			assert.is_true(noteBox == nil, "Expected note box to be nil, got: " .. tostring(config.name))
 		end)
 	end)
+
+	describe("updateMetadata", function()
+		it("should be a function", function()
+			assert.is_function(BufferController.updateMetadata)
+		end)
+
+		it("should return early for a buffer with no file name", function()
+			-- Use a scratch buffer (no file name associated)
+			local bufnr = vim.api.nvim_create_buf(false, true)
+			-- updateMetadata should not error for nameless buffers
+			assert.has_no.errors(function()
+				BufferController.updateMetadata(bufnr)
+			end)
+			vim.api.nvim_buf_delete(bufnr, { force = true })
+		end)
+
+		it("should return early for a buffer whose file is not in a configured NoteBox", function()
+			local testConfig = {
+				database = "tests/TestData/MetaFly/metadata.db",
+				views = "tests/TestData/MetaFly/Views/",
+				logger = {
+					level = "debug",
+					logFile = "tests/TestData/MetaFly/logs/metafly.log",
+				},
+				noteBoxes = {
+					{
+						name = "TestData",
+						path = "/some/notebox/path",
+						maxdepth = 3,
+						ignored = {},
+					},
+				},
+			}
+			local config = Config:getInstance()
+			config:setOptions(testConfig)
+
+			-- Create a buffer with a name outside the configured NoteBox
+			local bufnr = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_buf_set_name(bufnr, "/outside/notebox/file.md")
+
+			-- Should return early without error
+			assert.has_no.errors(function()
+				BufferController.updateMetadata(bufnr)
+			end)
+
+			vim.api.nvim_buf_delete(bufnr, { force = true })
+		end)
+	end)
 end)
