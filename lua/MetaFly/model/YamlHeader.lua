@@ -177,7 +177,8 @@ function YamlHeader:parseDocument()
 		end
 	end
 	if self.noteData.title == nil or self.noteData.title == "" then
-		self.noteData.title = self:getTitle()
+		local rawTitle = self:getTitle()
+		self.noteData.title = rawTitle ~= nil and tostring(rawTitle) or nil
 	end
 	if self.header.id ~= nil and type(self.header.id) ~= "table" then
 		self.noteData.noteId = "" .. self.header.id
