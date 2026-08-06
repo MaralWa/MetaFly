@@ -35,10 +35,10 @@ function Note.isMetaData(property)
 		property == "id"
 		or property == "idNoteBox"
 		or property == "noteId"
-		or property == "noteId"
 		or property == "title"
 		or property == "type"
 		or property == "status"
+		or property == "tags"
 		or property == "fileName"
 		or property == "created"
 		or property == "lastUpdated"
@@ -114,10 +114,29 @@ function Note.getNoteWithId(idNoteBox, noteId)
 	return newNote
 end
 
+---Ensure every text field in a values table is a proper Lua string so that
+---sqlite.lua always uses named-parameter binding rather than raw interpolation.
+---@param values table
+---@return table
+local function sanitiseValues(values)
+	local textFields = { "noteId", "title", "type", "context", "status", "tags", "fileName", "created", "lastUpdated" }
+	local result = {}
+	for k, v in pairs(values) do
+		result[k] = v
+	end
+	for _, field in ipairs(textFields) do
+		if result[field] ~= nil then
+			result[field] = tostring(result[field])
+		end
+	end
+	return result
+end
+
 ---@param values table
 ---@return Note | nil
 function Note.saveValues(values)
 	logger.debug("Saving note data: " .. vim.inspect(values))
+	values = sanitiseValues(values)
 	local row = { idNoteBox = values["idNoteBox"], noteId = values["noteId"] }
 	local selectedRow = database.Note:get({
 		where = row,
@@ -144,7 +163,8 @@ function Note.saveValues(values)
 end
 
 ---@param values table
-function Note:upate(values)
+function Note:update(values)
+	values = sanitiseValues(values)
 	values["lastUpdated"] = os.time()
 	if self.id == -1 then
 		self.id = database.Note:insert(values)
