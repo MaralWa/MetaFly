@@ -135,69 +135,72 @@ local function sanitiseValues(values)
 	return result
 end
 
----Insert a note row using an explicit parameterised statement so that field
----values with special characters (parentheses, dots, apostrophes …) are
----always safely bound rather than raw-interpolated into the SQL string.
+---Insert a note row using positional parameters so that field values with
+---special characters (parentheses, dots, apostrophes …) are always safely
+---bound.  Named-parameter binding in sqlite.lua skips strings that look like
+---function calls (e.g. "26.3-2(16.07-29.07)"), so we use positional `?`
+---placeholders and bind each value by index instead.
 ---@param values table
 ---@return number  last inserted row id
 local function insertNote(values)
 	local db = database:getInstance():getSqlite()
-	local params = {
-		noteId = values.noteId,
-		title = values.title,
-		type = values.type,
-		context = values.context,
-		status = values.status,
-		tags = values.tags,
-		fileName = values.fileName,
-		idNoteBox = values.idNoteBox,
-		created = values.created,
-		lastUpdated = values.lastUpdated,
+	-- Order must match the column list in the INSERT statement below.
+	local ordered = {
+		values.noteId,
+		values.title,
+		values.type,
+		values.context,
+		values.status,
+		values.tags,
+		values.fileName,
+		values.idNoteBox,
+		values.created,
+		values.lastUpdated,
 	}
-	db:eval(
-		[[INSERT INTO Note
-			(noteId, title, type, context, status, tags, fileName, idNoteBox, created, lastUpdated)
-		VALUES
-			(:noteId, :title, :type, :context, :status, :tags, :fileName, :idNoteBox, :created, :lastUpdated)]],
-		params
+	local sqlstmt = require("sqlite.stmt")
+	local stmt = sqlstmt:parse(
+		db.conn,
+		"INSERT INTO Note (noteId, title, type, context, status, tags, fileName, idNoteBox, created, lastUpdated)"
+			.. " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	)
+	for i = 1, 10 do
+		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
+	end
+	stmt:step()
+	stmt:finalize()
 	local row = db:eval("SELECT last_insert_rowid() AS id")
 	return row[1].id
 end
 
----Update a note row using an explicit parameterised statement.
+---Update a note row using positional parameters (same rationale as insertNote).
 ---@param id number
 ---@param values table
 local function updateNote(id, values)
 	local db = database:getInstance():getSqlite()
-	local params = {
-		id = id,
-		noteId = values.noteId,
-		title = values.title,
-		type = values.type,
-		context = values.context,
-		status = values.status,
-		tags = values.tags,
-		fileName = values.fileName,
-		idNoteBox = values.idNoteBox,
-		created = values.created,
-		lastUpdated = values.lastUpdated,
+	local ordered = {
+		values.noteId,
+		values.title,
+		values.type,
+		values.context,
+		values.status,
+		values.tags,
+		values.fileName,
+		values.idNoteBox,
+		values.created,
+		values.lastUpdated,
+		id,
 	}
-	db:eval(
-		[[UPDATE Note SET
-			noteId = :noteId,
-			title = :title,
-			type = :type,
-			context = :context,
-			status = :status,
-			tags = :tags,
-			fileName = :fileName,
-			idNoteBox = :idNoteBox,
-			created = :created,
-			lastUpdated = :lastUpdated
-		WHERE id = :id]],
-		params
+	local sqlstmt = require("sqlite.stmt")
+	local stmt = sqlstmt:parse(
+		db.conn,
+		"UPDATE Note SET noteId=?, title=?, type=?, context=?, status=?, tags=?, fileName=?, idNoteBox=?, created=?, lastUpdated=?"
+			.. " WHERE id=?"
 	)
+	for i = 1, 11 do
+		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
+	end
+	stmt:step()
+	stmt:finalize()
 end
 
 ---@param values table
