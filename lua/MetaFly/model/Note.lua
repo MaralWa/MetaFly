@@ -114,8 +114,10 @@ function Note.getNoteWithId(idNoteBox, noteId)
 	return newNote
 end
 
----Ensure every text field in a values table is a proper Lua string so that
----sqlite.lua always uses named-parameter binding rather than raw interpolation.
+---Normalise values before storing them in sqlite so that text fields are
+---always proper Lua strings and idNoteBox is a number.  This prevents
+---sqlite.lua from raw-interpolating values that look like SQL expressions
+---(e.g. "26.3-2(16.07-29.07)") instead of binding them as parameters.
 ---@param values table
 ---@return table
 local function sanitiseValues(values)
@@ -124,12 +126,54 @@ local function sanitiseValues(values)
 	for k, v in pairs(values) do
 		result[k] = v
 	end
+	result.idNoteBox = values["idNoteBox"] ~= nil and tonumber(values["idNoteBox"]) or nil
 	for _, field in ipairs(textFields) do
 		if result[field] ~= nil then
 			result[field] = tostring(result[field])
 		end
 	end
 	return result
+end
+
+---Insert a note row using an explicit parameterised statement so that field
+---values with special characters (parentheses, dots, apostrophes …) are
+---always safely bound rather than raw-interpolated into the SQL string.
+---@param values table
+---@return number  last inserted row id
+local function insertNote(values)
+	local db = database:getInstance():getSqlite()
+	db:eval(
+		[[INSERT INTO Note
+			(noteId, title, type, context, status, tags, fileName, idNoteBox, created, lastUpdated)
+		VALUES
+			(:noteId, :title, :type, :context, :status, :tags, :fileName, :idNoteBox, :created, :lastUpdated)]],
+		values
+	)
+	local row = db:eval("SELECT last_insert_rowid() AS id")
+	return row[1].id
+end
+
+---Update a note row using an explicit parameterised statement.
+---@param id number
+---@param values table
+local function updateNote(id, values)
+	local db = database:getInstance():getSqlite()
+	local bound = vim.tbl_extend("force", values, { id = id })
+	db:eval(
+		[[UPDATE Note SET
+			noteId = :noteId,
+			title = :title,
+			type = :type,
+			context = :context,
+			status = :status,
+			tags = :tags,
+			fileName = :fileName,
+			idNoteBox = :idNoteBox,
+			created = :created,
+			lastUpdated = :lastUpdated
+		WHERE id = :id]],
+		bound
+	)
 end
 
 ---@param values table
@@ -141,19 +185,14 @@ function Note.saveValues(values)
 	local selectedRow = database.Note:get({
 		where = row,
 	})
-	local idNote = nil
 	if #selectedRow == 0 then
-		idNote = database.Note:insert(values)
-
+		local idNote = insertNote(values)
 		values.id = idNote
 		return Note:new(values)
 	elseif #selectedRow == 1 then
 		for _, rowValues in pairs(selectedRow) do
 			logger.debug("Note already exists with values " .. vim.inspect(rowValues))
-			database.Note:update({
-				where = { id = rowValues.id },
-				set = values,
-			})
+			updateNote(rowValues.id, values)
 			values.id = rowValues.id
 			return Note:new(values)
 		end
@@ -165,14 +204,11 @@ end
 ---@param values table
 function Note:update(values)
 	values = sanitiseValues(values)
-	values["lastUpdated"] = os.time()
+	values["lastUpdated"] = tostring(os.time())
 	if self.id == -1 then
-		self.id = database.Note:insert(values)
+		self.id = insertNote(values)
 	else
-		database.Note:update({
-			where = { id = self.id },
-			set = values,
-		})
+		updateNote(self.id, values)
 	end
 	self.title = values["title"]
 	self.type = values["type"]
