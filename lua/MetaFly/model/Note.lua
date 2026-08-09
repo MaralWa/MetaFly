@@ -142,12 +142,24 @@ end
 ---@return number  last inserted row id
 local function insertNote(values)
 	local db = database:getInstance():getSqlite()
+	local params = {
+		noteId = values.noteId,
+		title = values.title,
+		type = values.type,
+		context = values.context,
+		status = values.status,
+		tags = values.tags,
+		fileName = values.fileName,
+		idNoteBox = values.idNoteBox,
+		created = values.created,
+		lastUpdated = values.lastUpdated,
+	}
 	db:eval(
 		[[INSERT INTO Note
 			(noteId, title, type, context, status, tags, fileName, idNoteBox, created, lastUpdated)
 		VALUES
 			(:noteId, :title, :type, :context, :status, :tags, :fileName, :idNoteBox, :created, :lastUpdated)]],
-		values
+		params
 	)
 	local row = db:eval("SELECT last_insert_rowid() AS id")
 	return row[1].id
@@ -158,7 +170,19 @@ end
 ---@param values table
 local function updateNote(id, values)
 	local db = database:getInstance():getSqlite()
-	local bound = vim.tbl_extend("force", values, { id = id })
+	local params = {
+		id = id,
+		noteId = values.noteId,
+		title = values.title,
+		type = values.type,
+		context = values.context,
+		status = values.status,
+		tags = values.tags,
+		fileName = values.fileName,
+		idNoteBox = values.idNoteBox,
+		created = values.created,
+		lastUpdated = values.lastUpdated,
+	}
 	db:eval(
 		[[UPDATE Note SET
 			noteId = :noteId,
@@ -172,7 +196,7 @@ local function updateNote(id, values)
 			created = :created,
 			lastUpdated = :lastUpdated
 		WHERE id = :id]],
-		bound
+		params
 	)
 end
 
