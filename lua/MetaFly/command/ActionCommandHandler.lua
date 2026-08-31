@@ -1,4 +1,6 @@
 local config = require("MetaFly.config"):getInstance()
+local notesPickerController = require("MetaFly.controller.NotesPickerController")
+local viewController = require("MetaFly.controller.ViewController")
 local logger = config:getLogger()
 
 -- ActionCommandHandler provides an alternative command handler for the "MetaFly"
@@ -9,8 +11,14 @@ local logger = config:getLogger()
 
 local ActionCommandHandler = {}
 
+local lastAction = nil
+
+ActionCommandHandler.lastAction = function()
+	return lastAction
+end
+
 -- The ordered list of supported actions.
-ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore" }
+ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore", "refresh" }
 
 -- Dispatch table mapping action names to their handler functions.
 -- Populated after the handler functions are defined below.
@@ -23,11 +31,12 @@ local actionDispatch = {}
 function ActionCommandHandler.executeAction(action, args)
 	local handler = actionDispatch[action]
 	if handler then
+		lastAction = action .. (args and (" with args: " .. args) or "")
 		handler(args)
 	else
-		local msg = "Unknown MetaFly action: " .. tostring(action)
-		logger.error(msg)
-		vim.notify(msg, vim.log.levels.ERROR)
+		lastAction = "Unknown MetaFly action: " .. tostring(action)
+		logger.error(lastAction)
+		vim.notify(lastAction, vim.log.levels.ERROR)
 	end
 end
 
@@ -38,9 +47,7 @@ function ActionCommandHandler.execute(action, args)
 	if action == nil or action == "" then
 		-- No action supplied – ask the user which one to run.
 		ActionCommandHandler.promptAction(args)
-		return
 	end
-
 	ActionCommandHandler.executeAction(action, args)
 end
 
@@ -68,6 +75,7 @@ end
 function ActionCommandHandler.executeOpen(args)
 	logger.info("MetaFly action: open" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly open: " .. tostring(args), vim.log.levels.INFO)
+	notesPickerController.showPicker(args)
 end
 
 -- Display a view, optionally specified by args.
@@ -75,6 +83,7 @@ end
 function ActionCommandHandler.executeView(args)
 	logger.info("MetaFly action: view" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly view: " .. tostring(args), vim.log.levels.INFO)
+	viewController.showView(args)
 end
 
 -- Select an item interactively, with optional filter/scope in args.
@@ -89,6 +98,7 @@ end
 function ActionCommandHandler.executeQuery(args)
 	logger.info("MetaFly action: query" .. (args and (" args=" .. args) or ""))
 	vim.notify("MetaFly query: " .. tostring(args), vim.log.levels.INFO)
+	require("MetaFly.view.SqlResultWindow").displaySqlResult(args)
 end
 
 -- Search notes by keyword or pattern given in args.
@@ -105,6 +115,15 @@ function ActionCommandHandler.executeExplore(args)
 	vim.notify("MetaFly explore: " .. tostring(args), vim.log.levels.INFO)
 end
 
+-- Refresh all MetaFly view regions in the current buffer.
+-- Validates the buffer first and replaces outdated view data with fresh results.
+-- @param args  string|nil  Currently unused.
+function ActionCommandHandler.executeRefresh(args)
+	logger.info("MetaFly action: refresh" .. (args and (" args=" .. args) or ""))
+	local bufferController = require("MetaFly.controller.BufferController")
+	bufferController.refreshViews()
+end
+
 -- Wire up the dispatch table so executeAction can resolve handlers by name.
 actionDispatch["open"] = ActionCommandHandler.executeOpen
 actionDispatch["view"] = ActionCommandHandler.executeView
@@ -112,5 +131,6 @@ actionDispatch["select"] = ActionCommandHandler.executeSelect
 actionDispatch["query"] = ActionCommandHandler.executeQuery
 actionDispatch["search"] = ActionCommandHandler.executeSearch
 actionDispatch["explore"] = ActionCommandHandler.executeExplore
+actionDispatch["refresh"] = ActionCommandHandler.executeRefresh
 
 return ActionCommandHandler

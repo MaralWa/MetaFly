@@ -11,8 +11,11 @@ function MetaFly.setup(opts)
 	logger = config:getLogger()
 	local db = require("MetaFly.model.database"):getInstance()
 	logger.info("MetaFly Database initialized at: " .. db:getUri())
-	local setUpController = require("MetaFly.controller.SetUpController"):new()
-	local noteboxes = setUpController:scanNoteBoxes(opts["noteBoxes"])
+
+	-- Scan note boxes asynchronously in the background so that
+	-- Neovim startup is not blocked by file scanning.
+	local AsyncScanner = require("MetaFly.controller.AsyncScanner")
+	AsyncScanner.scanInBackground(opts)
 end
 
 return MetaFly

@@ -1,17 +1,16 @@
-local sqlite = require("sqlite.db")
-local tbl = require("sqlite.tbl")
-local MetaFlyPopUp = require("MetaFly.view.MetaFlyPopUp")
+local config = require("MetaFly.config"):getInstance()
+local Utils = require("MetaFly.utils.Utils")
+local picker = require("MetaFly.picker.SnacksNotePicker")
+
+local logger = config:getLogger("NotesPickerController")
 
 local NotesPickerController = {}
 
-function NotesPickerController:selectNotes()
-	local popup = MetaFlyPopUp:new()
-	local notes = sqlite.db:eval(
-		"select Note.title, NoteBox.path || '/' || Note.fileName from Note, NoteBox where Note.idNoteBox = NoteBox.id limit 10"
-	)
-	if type(notes) == "table" then
-		popup:appendLines(TableUtils.convertToLines(notes))
+function NotesPickerController.showPicker(pickerName)
+	if not pickerName then
+		picker.notesView()
 	end
+	picker.notesView(pickerName)
 end
 
 return NotesPickerController

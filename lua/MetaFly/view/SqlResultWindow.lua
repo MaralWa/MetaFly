@@ -7,6 +7,8 @@ local event = require("nui.utils.autocmd").event
 local SqlResultWindow = {
 	popup = nil,
 	content = {},
+	beginline = "",
+	endline = "",
 }
 
 ---Creates a new SqlResultWindow instance
@@ -85,8 +87,12 @@ end
 
 ---Sets the content of the window
 ---@param lines table Array of strings to display
-function SqlResultWindow:setContent(lines)
+---@param beginline string|nil Optional line to insert at the beginning of the content
+---@param endline string|nil Optional line to insert at the end of the content
+function SqlResultWindow:setContent(lines, beginline, endline)
 	self.content = lines
+	self.beginline = beginline or ""
+	self.endline = endline or ""
 	vim.bo[self.popup.bufnr].modifiable = true
 	vim.api.nvim_buf_set_lines(self.popup.bufnr, 0, -1, false, lines)
 	vim.bo[self.popup.bufnr].modifiable = false
@@ -117,6 +123,12 @@ function SqlResultWindow:saveToCurrentBuffer()
 	-- Switch to the previous window
 	vim.api.nvim_set_current_win(prev_win)
 
+	if self.beginline ~= "" then
+		table.insert(self.content, 1, self.beginline)
+	end
+	if self.endline ~= "" then
+		table.insert(self.content, self.endline)
+	end
 	-- Insert content at cursor position
 	local cursor_pos = vim.api.nvim_win_get_cursor(prev_win)
 	local line = cursor_pos[1] - 1
@@ -149,7 +161,8 @@ end
 ---@param statement string The SQL statement to execute
 ---@param mode string|nil Optional mode parameter for callSql
 ---@param title string|nil Optional window title
-function SqlResultWindow.displaySqlResult(database, statement, mode, title)
+function SqlResultWindow.displaySqlResult(statement, mode, title)
+	local database = require("MetaFly.model.database"):getInstance()
 	local sqlResult = database:callSql(statement, mode)
 	local lines = {}
 

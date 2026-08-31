@@ -1,27 +1,47 @@
 local lyaml = require("lyaml")
 local MetaFlyView = require("MetaFly.model.MetaFlyView")
+local Utils = require("MetaFly.utils.Utils")
 
 local ViewFactory = {}
 
 local logger = require("MetaFly.config"):getInstance():getLogger("ViewFactory")
 
----@param fileName string
+function ViewFactory.resolveFileName(viewName)
+	logger.info("Resolving file name for view: " .. viewName)
+	local config = require("MetaFly.config"):getInstance()
+	local viewDir = config:getViewsDirectory()
+	if viewDir == nil then
+		logger.error("View directory is null")
+		return nil
+	end
+	logger.info("View directory: " .. tostring(viewDir))
+	return Utils.findFileByBasename(viewDir, viewName, { ".yml", ".yaml" })
+end
+
+---@param viewName string
 ---@return MetaFlyView|nil
-function ViewFactory.readFromFile(fileName)
-	local create = {
+function ViewFactory.readFromFile(viewName)
+	local create = {}
 
-		Picker = function(values)
-			vim.notify("Creating picker view from file: " .. fileName, vim.log.levels.ERROR)
-			return require("MetaFly.model.PickerView"):new(values)
-		end,
-	}
+	create["Picker"] = function(values)
+		logger.debug("Creating picker view from values: " .. vim.inspect(values))
+		return require("MetaFly.model.PickerView"):new(values)
+	end
+	create["View"] = function(values)
+		logger.debug("Creating picker view from values: " .. vim.inspect(values))
+		return require("MetaFly.model.MetaFlyView"):new(values)
+	end
 
-	logger:info("Reading view from file: " .. fileName)
-	vim.notify("Reading view from file: " .. fileName)
+	logger.info("Resolving file name for view: " .. viewName)
+	local fileName = ViewFactory.resolveFileName(viewName)
+	if fileName == nil then
+		logger.error("No view file found for view name: " .. viewName)
+		return nil
+	end
+	logger.info("Reading view from file: " .. fileName)
 	local viewFile = io.open(fileName, "r")
 	if viewFile == nil then
-		logger:info("viewFile ist null")
-		vim.notify("viewFile ist null")
+		logger.error("viewFile ist null")
 		return nil
 	end
 	local viewYaml = viewFile:read("*all")
@@ -29,17 +49,16 @@ function ViewFactory.readFromFile(fileName)
 	local viewData = lyaml.load(viewYaml)
 
 	if viewData == nil then
-		logger:info("viewData ist null")
-		vim.notify("viewData ist null")
+		logger.error("viewData ist null")
 		return nil
 	end
 	local viewType = viewData["type"]
 	if create[viewType] == nil then
-		logger:info("Unknown view type: " .. tostring(viewType))
-		vim.notify("Unknown view type: " .. tostring(viewType))
+		logger.error("Unknown view type: " .. tostring(viewType))
 		return nil
 	end
 
+	logger.info("Creating view of type: " .. viewType)
 	return create[viewType](viewData)
 end
 

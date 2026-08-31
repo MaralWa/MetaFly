@@ -1,3 +1,5 @@
+local logger = require("MetaFly.config").getInstance():getLogger("SqlBuilder")
+
 SqlBuilder = {}
 
 local columnSnippets = {
@@ -29,11 +31,19 @@ local columnSnippets = {
 	tags = "group_concat(Tag.name, ', ')",
 }
 
+local AllowedInherits = {
+	"Note.idNoteBox",
+	"Note.type",
+	"Note.status",
+	"Note.context",
+}
+
 ---@class SqlBuilder
 ---@field public columns table
 ---@field public from table
 ---@field public where string
 ---@field public orderBy table
+---@field public groupBy table
 ---@field public limit number
 
 function SqlBuilder:new()
@@ -41,6 +51,7 @@ function SqlBuilder:new()
 		columns = {},
 		from = {},
 		where = "",
+		groupBy = {},
 		orderBy = {},
 		limit = nil,
 	}
@@ -53,6 +64,7 @@ function SqlBuilder:withColumns(cols)
 	if cols == nil or #cols == 0 then
 		return self
 	end
+	local fileName = vim.api.nvim_buf_get_name(0)
 	for _, col in ipairs(cols) do
 		if columnSnippets[col] then
 			local columnSpec = columnSnippets[col]
@@ -81,6 +93,7 @@ function SqlBuilder:withFrom(tables)
 end
 
 function SqlBuilder:withWhere(condition)
+	logger.debug("Adding WHERE condition: " .. tostring(condition)) -- Debug print
 	if condition == nil or condition == "" then
 		return self
 	end
@@ -92,12 +105,51 @@ function SqlBuilder:withWhere(condition)
 	return self
 end
 
+function SqlBuilder:isValidInherit(inherit)
+	for _, validInherit in ipairs(AllowedInherits) do
+		if inherit == validInherit then
+			return true
+		end
+	end
+	return false
+end
+
+function SqlBuilder:withInherits(inherits)
+	logger.debug("Processing inherits: " .. vim.inspect(inherits)) -- Debug print
+	if inherits == nil or #inherits == 0 then
+		return self
+	end
+	for _, inherit in ipairs(inherits) do
+		if SqlBuilder:isValidInherit(inherit) then
+			local bufferValue = require("MetaFly.model.database"):getInstance():getPropertyOfCurrentBuffer(inherit)
+			if bufferValue ~= nil then
+				self:withWhere(inherit .. " = '" .. bufferValue .. "'")
+			else
+				print("Warning: No value found for inherit condition: " .. inherit)
+			end
+		else
+			print("Warning: Ignoring invalid inherit condition: " .. inherit)
+		end
+	end
+	return self
+end
+
 function SqlBuilder:withOrderBy(cols)
 	if cols == nil or #cols == 0 then
 		return self
 	end
 	for _, col in ipairs(cols) do
 		table.insert(self.orderBy, col)
+	end
+	return self
+end
+
+function SqlBuilder:withGroupBy(cols)
+	if cols == nil or #cols == 0 then
+		return self
+	end
+	for _, col in ipairs(cols) do
+		table.insert(self.groupBy, col)
 	end
 	return self
 end
@@ -121,8 +173,11 @@ function SqlBuilder:build()
 	if self.limit then
 		query = query .. " LIMIT " .. tostring(self.limit)
 	end
+	if #self.groupBy > 0 then
+		query = query .. " GROUP BY " .. table.concat(self.groupBy, ", ")
+	end
 	print("Built SQL Query: " .. query) -- Debug print
-	return query
+	return string.gsub(query, '"', '\\"')
 end
 
 return SqlBuilder

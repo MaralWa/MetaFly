@@ -5,13 +5,13 @@ describe("MetaFly.command.ActionCommandHandler", function()
 	-- Basic structure checks
 	-- -----------------------------------------------------------------------
 
-	it("should export an ACTIONS table with the six supported actions", function()
+	it("should export an ACTIONS table with the seven supported actions", function()
 		assert.is_table(ActionCommandHandler.ACTIONS)
 		local lookup = {}
 		for _, a in ipairs(ActionCommandHandler.ACTIONS) do
 			lookup[a] = true
 		end
-		local expected = { "open", "view", "select", "query", "search", "explore" }
+		local expected = { "open", "view", "select", "query", "search", "explore", "refresh" }
 		assert.are.equal(#expected, #ActionCommandHandler.ACTIONS)
 		for _, action in ipairs(expected) do
 			assert.is_true(lookup[action], "Expected action '" .. action .. "' to be present")
@@ -58,34 +58,24 @@ describe("MetaFly.command.ActionCommandHandler", function()
 		assert.is_function(ActionCommandHandler.executeExplore)
 	end)
 
+	it("should have executeRefresh function", function()
+		assert.is_function(ActionCommandHandler.executeRefresh)
+	end)
+
 	-- -----------------------------------------------------------------------
 	-- Dispatch behaviour
 	-- -----------------------------------------------------------------------
 
 	it("should dispatch to executeOpen when action is 'open'", function()
-		local called_with = nil
-		local original = ActionCommandHandler.executeOpen
-		ActionCommandHandler.executeOpen = function(args)
-			called_with = args
-		end
-
 		ActionCommandHandler.execute("open", "some/path")
-
-		ActionCommandHandler.executeOpen = original
-		assert.are.equal("some/path", called_with)
+		local lastAction = ActionCommandHandler.lastAction()
+		assert.are.equal("open with args: some/path", lastAction)
 	end)
 
 	it("should dispatch to executeSearch when action is 'search'", function()
-		local called_with = nil
-		local original = ActionCommandHandler.executeSearch
-		ActionCommandHandler.executeSearch = function(args)
-			called_with = args
-		end
-
 		ActionCommandHandler.execute("search", "keyword")
-
-		ActionCommandHandler.executeSearch = original
-		assert.are.equal("keyword", called_with)
+		local lastAction = ActionCommandHandler.lastAction()
+		assert.are.equal("search with args: keyword", lastAction)
 	end)
 
 	it("should dispatch to promptAction when no action is given", function()

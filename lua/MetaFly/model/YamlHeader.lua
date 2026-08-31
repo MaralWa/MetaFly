@@ -1,12 +1,11 @@
 local lyaml = require("lyaml")
 local Config = require("MetaFly.config")
 
-local logger = nil
+local logger = Config:getInstance():getLogger()
 
 local NoteData = {
 	title = "title",
 	type = "type",
-	context = "context",
 	status = "status",
 	id = "noteId",
 }
@@ -29,10 +28,10 @@ local YamlHeader = {
 	mapping = {},
 	noteData = {
 		idNoteBox = "",
-		noteId = "xxxx",
-		type = "note",
+		noteId = "",
+		title = "",
+		type = "",
 		status = "",
-		context = "",
 		created = os.time(),
 	},
 	metaData = {},
@@ -42,7 +41,6 @@ local YamlHeader = {
 ---@param fileName string
 ---@param bufferNumber number
 function YamlHeader:new(fileName, bufferNumber)
-	logger = require("MetaFly.config"):getInstance():getLogger("YamlHeader")
 	local newObject = setmetatable({}, self)
 	self.__index = self
 	newObject.fileName = fileName
@@ -53,7 +51,7 @@ function YamlHeader:new(fileName, bufferNumber)
 	newObject.mappings = {}
 	newObject.noteData = {
 		idNoteBox = "",
-		type = "note",
+		type = "",
 		status = "",
 		context = "",
 		created = os.time(),
@@ -99,7 +97,7 @@ function YamlHeader:getTitle()
 	end
 	-- use first alias as title if any aliases are defined
 	if self.header.aliases ~= nil and type(self.header.aliases) == "table" then
-		for key, value in pairs(self.header.aliases) do
+		for _, value in pairs(self.header.aliases) do
 			if type(value) ~= "table" then
 				return value
 			end
@@ -144,14 +142,27 @@ function YamlHeader:parseYaml(yaml_text)
 	return self:safe_load_with_logger(yaml_text)
 end
 
----@param noteBox NoteBox
-function YamlHeader:parseDocument(noteBox)
+function YamlHeader:asJson(value)
+	if value == nil then
+		return nil
+	end
+	if type(value) == "string" and value ~= "" then
+		return vim.fn.json_encode({ value })
+	end
+	if type(value) == "table" and #value > 0 then
+		return vim.fn.json_encode(value)
+	end
+	return nil
+end
+
+function YamlHeader:parseDocument()
 	if self.headerLines == nil then
 		return nil
 	end
-	self.header, error = self:parseYaml(table.concat(self.headerLines, "\n"))
+	local parseError
+	self.header, parseError = self:parseYaml(table.concat(self.headerLines, "\n"))
 	if not self.header then
-		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. error)
+		logger.error("Failed to parse YAML header in file " .. self.fileName .. ": " .. parseError)
 		return nil
 	end
 	if type(self.header) ~= "table" then
@@ -166,10 +177,9 @@ function YamlHeader:parseDocument(noteBox)
 		end
 	end
 	if self.noteData.title == nil or self.noteData.title == "" then
-		self.noteData.title = self.getTitle(self)
+		local rawTitle = self:getTitle()
+		self.noteData.title = rawTitle ~= nil and tostring(rawTitle) or nil
 	end
-	self.noteData.idNoteBox = "" .. noteBox:getId()
-	self.noteData.fileName = noteBox:getRelativePath(self.fileName)
 	if self.header.id ~= nil and type(self.header.id) ~= "table" then
 		self.noteData.noteId = "" .. self.header.id
 	end
@@ -177,14 +187,10 @@ function YamlHeader:parseDocument(noteBox)
 		self.noteData.noteId = self.noteData.title
 	end
 	--self.metaData.id = nil
-	if self.header.tags ~= nil then
-		if type(self.header.tags) == "table" then
-			self.noteData.tags = #self.header["tags"] > 0 and table.concat(self.header["tags"], ", ") or ""
-		else
-			self.noteData.tags = self.noteData["tags"]
-		end
-		self.metaData.tags = nil
-	end
+	self.noteData.tags = self:asJson(self.header.tags)
+	self.metaData.tags = nil
+	self.noteData.context = self:asJson(self.header.context)
+	self.metaData.context = nil
 	self.noteData.created = "" .. self:createDateFromString(self.header["date"])
 	return self.noteData
 end

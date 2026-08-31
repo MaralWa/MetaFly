@@ -4,9 +4,11 @@ Config.__index = Config
 
 local instance = nil
 
----@class MetaFly.config.NoteBox
+---@class MetaFly.config.NoteBoxConfig
 ---@field name string
 ---@field path string
+---@field maxdepth integer
+---@field ignored string[]
 
 ---@alias MetaFly.config.LoggerLevel
 ---| "trace"
@@ -22,7 +24,7 @@ local instance = nil
 
 ---@class MetaFly.config
 ---@field database string
----@field noteBoxes MetaFly.config.NoteBox[]
+---@field noteBoxes MetaFly.config.NoteBoxConfig[]
 ---@field logger MetaFly.config.Logger
 ---@field views string
 ---@field valuesSeparator string
@@ -35,10 +37,9 @@ local defaults = {
 }
 
 function Config:new()
-	print("new config")
-	local self = setmetatable({}, Config)
-	self.theLogger = nil
-	return self
+	local newConfig = setmetatable({}, Config)
+	newConfig.theLogger = nil
+	return newConfig
 end
 
 function Config:getInstance()
@@ -81,13 +82,17 @@ function Config:setOptions(opts)
 	end
 end
 
+function Config:getViewsDirectory()
+	return self.views or DefaultConfig.views
+end
+
 function Config:getLogger()
 	if self.theLogger == nil then
 		local loggerConfig = self.logger or DefaultConfig.logger
 		self.theLogger = require("plenary.log").new({
 			plugin = "MetaFly",
 			level = loggerConfig.level or "error",
-			use_console = "false",
+			use_console = false,
 			use_file = true,
 			outfile = loggerConfig.logFile,
 		})

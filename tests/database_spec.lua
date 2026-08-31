@@ -9,16 +9,32 @@ Database = require("MetaFly.model.database")
 Config = require("MetaFly.config")
 
 describe("Database", function()
-	local db
+	local testConfig = {
+		database = "tests/TestData/MetaFly/metadata.db",
+		views = "tests/TestData/MetaFly/Views/",
+		logger = {
+			level = "debug",
+			logFile = "tests/TestData/MetaFly/logs/metafly.log",
+		},
+		noteBoxes = {
+			{
+				name = "TestData",
+				path = "tests/TestData",
+				maxdepth = 3,
+				ignored = { "MetaFly", "ignored", "Views" },
+			},
+		},
+	}
 
-	before_each(function()
-		Config:getInstance():setup({})
-		db = Database:getInstance()
-	end)
+	local config = Config:getInstance()
+	config:setOptions(testConfig)
+	local logger = config:getLogger()
+	local db = require("MetaFly.model.database"):getInstance()
+	logger.info("MetaFly Database initialized at: " .. db:getUri())
 
 	it("should have a URI and command", function()
 		assert.is_string(db:getUri())
-		assert.equals("~/.config/metafly_database.db", db:getUri())
+		assert.equals("tests/TestData/MetaFly/metadata.db", db:getUri())
 		assert.is_string(db:getCommand())
 	end)
 
@@ -36,5 +52,8 @@ describe("Database", function()
 		local testCommand = "sqlite3 test.db"
 		db:setCommand(testCommand)
 		assert.equals(testCommand, db:getCommand())
+		local note = db:select("select * from Note limit 1")
+		assert.is_table(note)
+		print(vim.inspect(note))
 	end)
 end)
