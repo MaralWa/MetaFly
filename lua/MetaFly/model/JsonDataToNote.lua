@@ -60,8 +60,9 @@ function JsonDataToNote:update(json)
 	end
 end
 
-function JsonDataToNote.delete(conditions)
-	database.JsonDataToNote:remove({ where = conditions })
+function JsonDataToNote.count(conditions)
+	local results = database.JsonDataToNote:get({ where = conditions })
+	return #results
 end
 
 return JsonDataToNote

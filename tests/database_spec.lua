@@ -52,5 +52,8 @@ describe("Database", function()
 		local testCommand = "sqlite3 test.db"
 		db:setCommand(testCommand)
 		assert.equals(testCommand, db:getCommand())
+		local note = db:select("select * from Note limit 1")
+		assert.is_table(note)
+		print(vim.inspect(note))
 	end)
 end)

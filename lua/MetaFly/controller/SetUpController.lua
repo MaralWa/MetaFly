@@ -1,4 +1,5 @@
 local Config = require("MetaFly.config")
+local database = require("MetaFly.model.database")
 local NoteBox = require("MetaFly.model.NoteBox")
 local Note = require("MetaFly.model.Note")
 local MetaData = require("MetaFly.model.MetaData")
@@ -55,30 +56,58 @@ function SetUpController:saveMetaData(note, metaData, values)
 				.. #values
 				.. " values provided. Deleting old meta data."
 		)
-		MetaDataToNote.delete({ idMetaData = metaData:getId(), idNote = note:getId(), index = { ">", #values } })
+		MetaDataToNote.deleteByPosition(metaData:getId(), note:getId(), #values)
 	end
 
 	logger.debug(
 		"Meta data count for meta data " .. metaData.name .. " and note " .. note:getId() .. " is " .. metaDataCount
 	)
 
-	for index, value in pairs(values) do
-		logger.debug("Meta data value " .. index .. ": " .. value)
-		local metaDataToNote = MetaDataToNote.get(metaData:getId(), note:getId(), index)
+	for position, value in pairs(values) do
+		logger.debug("Meta data value " .. position .. ": " .. value)
+		local metaDataToNote = MetaDataToNote.get(metaData:getId(), note:getId(), position)
 		if metaDataToNote ~= nil then
 			logger.debug(
-				"Updating meta data " .. metaData.name .. " for note " .. note:getId() .. " and index " .. index
+				"Updating meta data " .. metaData.name .. " for note " .. note:getId() .. " and position " .. position
 			)
 			metaDataToNote:update(value)
 		else
 			logger.error(
-				"Failed to get meta data " .. metaData.name .. " for note " .. note:getId() .. " and index " .. index
+				"Failed to get meta data "
+					.. metaData.name
+					.. " for note "
+					.. note:getId()
+					.. " and position "
+					.. position
 			)
 		end
 	end
 
 	local jsonDataToNote = JsonDataToNote.get(metaData:getId(), note:getId())
 	jsonDataToNote:update(vim.json.encode(values))
+end
+
+---comment
+---@param note Note
+---@param metaData table
+function SetUpController:updateMetaData(note, metaData)
+	local metaDataIds = {}
+	for name, value in pairs(metaData) do
+		local metaDataRow = MetaData.getByName(name)
+		table.insert(metaDataIds, metaDataRow:getId())
+		local metaDataValues = {}
+		if type(value) == "string" then
+			metaDataValues = { value }
+		elseif type(value) == "number" or type(value) == "boolean" then
+			metaDataValues = { tostring(value) }
+		elseif type(value) == "table" and #value > 0 then
+			metaDataValues = value
+		end
+		self:saveMetaData(note, metaDataRow, metaDataValues)
+	end
+
+	database:getInstance():deleteOther("MetaDataToNote", note:getId(), metaDataIds)
+	database:getInstance():deleteOther("JsonDataToNote", note:getId(), metaDataIds)
 end
 
 ---@param fileName string
@@ -106,22 +135,8 @@ function SetUpController:updateNote(fileName, noteBox, yamlHeader)
 		logger.error("Failed to save note for file: " .. fileName)
 		return
 	end
-	local metaDataIds = {}
-	for name, value in pairs(yamlHeader:getMetaData()) do
-		local metaDataRow = MetaData.getByName(name)
-		table.insert(metaDataIds, metaDataRow:getId())
-		local metaDataValues = {}
-		if type(value) == "string" then
-			metaDataValues = { value }
-		elseif type(value) == "number" or type(value) == "boolean" then
-			metaDataValues = { tostring(value) }
-		elseif type(value) == "table" and #value > 0 then
-			metaDataValues = value
-		end
-		self:saveMetaData(note, metaDataRow, metaDataValues)
-	end
-	MetaDataToNote.delete({ idNote = note:getId(), idMetaData = { "not in", metaDataIds } })
-	JsonDataToNote.delete({ idNote = note:getId(), idMetaData = { "not in", metaDataIds } })
+
+	self:updateMetaData(note, yamlHeader:getMetaData())
 end
 
 ---@param noteData table
@@ -174,7 +189,7 @@ function SetUpController:scanNoteBoxes(noteboxConfigs)
 			or string.sub(noteBoxConfig["path"], 1, -2)
 		local noteBox = NoteBox.selectOrInsertNoteBox(noteBoxConfig)
 		logger.debug("NoteBox ID " .. noteBox:getId())
-		logger.debug("NoteBox lastUpdated " .. noteBox.lastUpdated)
+		logger.debug("NoteBox lastUpdated " .. noteBox:getLastUpdated())
 		local idNoteBox = noteBox:getId()
 		local whereNotes = {}
 		whereNotes["idNoteBox"] = idNoteBox

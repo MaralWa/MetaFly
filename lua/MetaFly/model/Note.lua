@@ -84,11 +84,16 @@ function Note:getNoteId()
 	return self.noteId
 end
 
----@param pWhere  table
+---@param pWhere  table|nil
 ---@return integer
 function Note.count(pWhere)
-	local selectedRows = database.Note:get({ where = pWhere })
-	return #selectedRows
+	local rows
+	if pWhere == nil then
+		rows = database.Note:get()
+	else
+		rows = database.Note:get({ where = pWhere })
+	end
+	return #rows
 end
 
 ---@param idNoteBox number
