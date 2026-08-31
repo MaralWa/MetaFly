@@ -34,9 +34,8 @@ end
 ---@param aIdNote number
 ---@return JsonDataToNote
 function JsonDataToNote.get(aIdMetaData, aIdNote)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote }
-	local entries = sqlite.MetadataToNote:get({ where = row })
+	local entries = database.JsonDataToNote:get({ where = row })
 	if #entries == 1 then
 		for _, entry in pairs(entries) do
 			return JsonDataToNote:new(entry)
@@ -47,19 +46,23 @@ end
 
 ---@param json string
 function JsonDataToNote:update(json)
-	local sqlite = require("MetaFly.model.database"):getInstance():getSqlite()
 	if self.id == -1 then
-		local rowId = sqlite.MetadataToNote:insert({
+		local rowId = database.JsonDataToNote:insert({
 			idMetaData = self.idMetaData,
 			idNote = self.idNote,
 			json = json,
 		})
 	else
-		database.MetadataToNote:update({
+		database.JsonDataToNote:update({
 			where = { id = self.id },
 			set = { json = json },
 		})
 	end
+end
+
+function JsonDataToNote.count(conditions)
+	local results = database.JsonDataToNote:get({ where = conditions })
+	return #results
 end
 
 return JsonDataToNote

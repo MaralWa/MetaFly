@@ -38,15 +38,16 @@ database.Metadata = tbl("MetaData", {
 	type = { "text" },
 })
 
----@class MetadataToNote
-database.MetadataToNote = tbl("MetaDataToNote", {
+---@class MetaDataToNote
+database.MetaDataToNote = tbl("MetaDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
 	idNote = { "integer", reference = "Note.id", required = true },
+	position = { "integer", required = true },
 	value = { "text" },
 })
 
----@class MetadataToNote
+---@class JsonDataToNote
 database.JsonDataToNote = tbl("JsonDataToNote", {
 	id = true,
 	idMetaData = { "integer", reference = "MetaData.id", required = true },
@@ -61,7 +62,7 @@ local function new()
 	self.NoteBox = database.NoteBox
 	self.Note = database.Note
 	self.Metadata = database.Metadata
-	self.MetadataToNote = database.MetadataToNote
+	self.MetaDataToNote = database.MetaDataToNote
 	self.JsonDataToNote = database.JsonDataToNote
 	self.DB = nil
 	return self
@@ -87,9 +88,9 @@ function database:init()
 		NoteBox = self.NoteBox,
 		Note = self.Note,
 		Metadata = self.Metadata,
-		MetadataToNote = self.MetadataToNote,
+		MetaDataToNote = self.MetaDataToNote,
 		JsonDataToNote = self.JsonDataToNote,
-		opt = {},
+		opts = { keep_open = true },
 	})
 end
 
@@ -128,10 +129,39 @@ function database:callSql(statement, mode)
 	if mode ~= nil then
 		command = command .. " -" .. mode
 	end
-	print("Executing command: " .. command .. ' "' .. statement .. '"')
+	-- print("Executing command: " .. command .. ' "' .. statement .. '"')
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
+end
+
+function database:executeQuery(statement, mode)
+	local sqlResult = self:callSql(statement, mode)
+	local lines = {}
+
+	if sqlResult ~= nil then
+		for line in sqlResult:lines() do
+			table.insert(lines, line)
+		end
+		sqlResult:close()
+	else
+		lines = { "No results returned" }
+	end
+
+	return lines
+end
+
+function database:getQueryResultAsTable(statement)
+	local resultLines = self:executeQuery(statement, "json")
+	local jsonResult = table.concat(resultLines, "")
+
+	local ok, data = pcall(vim.json.decode, jsonResult)
+	if not ok then
+		-- print("Error decoding JSON: " .. data)
+		return nil
+	end
+
+	return data
 end
 
 function database:getPropertyOfCurrentBuffer(property)
@@ -144,7 +174,6 @@ function database:getPropertyOfCurrentBuffer(property)
 		.. "fullFileName = '"
 		.. fileName
 		.. "'"
-	print("Executing SQL: " .. statement)
 
 	local sqlResult = self:callSql(statement, "json")
 	local jsonResult = ""
@@ -155,7 +184,7 @@ function database:getPropertyOfCurrentBuffer(property)
 		end
 		sqlResult:close()
 	end
-	print("SQL Result: " .. jsonResult)
+	-- print("SQL Result: " .. jsonResult)
 
 	if jsonResult == nil or jsonResult == "" then
 		return nil
@@ -163,12 +192,28 @@ function database:getPropertyOfCurrentBuffer(property)
 
 	local ok, data = pcall(vim.json.decode, jsonResult)
 	if not ok then
-		print("Error decoding JSON: " .. data)
+		-- print("Error decoding JSON: " .. data)
 		return nil
 	end
 	if #data == 1 then
 		return data[1].property
 	end
+end
+
+---@param aTable string
+---@param aIdNote number
+---@param aMetaDataIds number[]
+function database:deleteOther(aTable, aIdNote, aMetaDataIds)
+	local deleteQuery = "DELETE from "
+		.. aTable
+		.. " where idNote = "
+		.. aIdNote
+		.. " AND idMetaData not in ("
+		.. table.concat(aMetaDataIds, ",")
+		.. ")"
+
+	-- print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
+	self:select(deleteQuery)
 end
 
 ---comment

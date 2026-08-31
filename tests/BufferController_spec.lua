@@ -1,5 +1,6 @@
 local BufferValidator = require("MetaFly.view.BufferValidator")
 local BufferController = require("MetaFly.controller.BufferController")
+local Config = require("MetaFly.config"):getInstance()
 
 describe("MetaFly.controller.BufferController", function()
 	describe("refreshViews", function()
@@ -80,6 +81,52 @@ describe("MetaFly.controller.BufferController", function()
 			assert.are.equal("testview", results[1].name)
 			assert.are.equal(2, results[1].beginLine)
 			assert.are.equal(5, results[1].endLine)
+		end)
+	end)
+
+	describe("getNoteBoxOfFile", function()
+		it("should return the name of the note box of buffer", function()
+			local testConfig = {
+				database = "tests/TestData/MetaFly/metadata.db",
+				views = "tests/TestData/MetaFly/Views/",
+				logger = {
+					level = "debug",
+					logFile = "tests/TestData/MetaFly/logs/metafly.log",
+				},
+				noteBoxes = {
+					{
+						name = "TestData",
+						path = "/home/user/tests/TestData",
+						maxdepth = 3,
+						ignored = { "MetaFly", "ignored", "Views" },
+					},
+					{
+						name = "SecondNoteBox",
+						path = "/home/user/noteBoxes/SecondNoteBox",
+						maxdepth = 2,
+						ignored = { "attachments", "diary", "Views" },
+					},
+				},
+			}
+
+			local config = Config:getInstance()
+			config:setOptions(testConfig)
+
+			local noteBox = BufferController.getNoteBoxOfFile("/home/user/tests/TestData/someBuffer.txt")
+			assert.is_true(
+				noteBox.name == "TestData",
+				"Expected note box name to be 'TestData', got: " .. tostring(config.name)
+			)
+
+			noteBox = BufferController.getNoteBoxOfFile("/home/user/tests/TestData/Diary/year/month/someBuffer.txt")
+			assert.is_true(
+				noteBox.name == "TestData",
+				"Expected note box name to be 'TestData', got: " .. tostring(config.name)
+			)
+
+			noteBox =
+				BufferController.getNoteBoxOfFile("/home/user/noteBoxes/SecondNoteBox/diary/year/month/someBuffer.txt")
+			assert.is_true(noteBox == nil, "Expected note box to be nil, got: " .. tostring(config.name))
 		end)
 	end)
 end)

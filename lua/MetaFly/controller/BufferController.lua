@@ -7,15 +7,57 @@ local logger = config:getLogger("BufferController")
 local BufferController = {}
 
 ---@param bufferNumber number of the buffer whose
-function BufferController:updateMetadata(bufferNumber)
+function BufferController.updateMetadata(bufferNumber)
 	local bufferInfo = vim.fn.bufinfo(bufferNumber)
 	local bufferName = vim.fn.bufname(bufferNumber)
+
+	local noteBox = self.getNoteBoxOfFile(bufferName)
+	if noteBox == nil then
+		logger.debug("No NoteBox found for buffer " .. bufferName)
+		return
+	end
 	local metaData = YamlHeader:getFromBuffer(bufferNumber)
 	local fileOfBuffer = vim.fn.GetFile(bufferNumber)
 end
 
+---@param fileName string of the buffer whose
+---@return table or nil if no NoteBox is found for the given fileName
+function BufferController.getNoteBoxOfFile(fileName)
+	local noteBox = nil
+	for _, noteBoxConfig in ipairs(config.noteBoxes) do
+		local noteBoxPath = noteBoxConfig.path
+		if not vim.startswith(fileName, noteBoxPath) then
+			goto next_notebox
+		end
+
+		local length = string.len(noteBoxPath)
+		local relativeFileName = string.sub(fileName, length + 1, -1)
+
+		local isIgnored = false
+		for _, ignored in ipairs(noteBoxConfig.ignored) do
+			if vim.startswith(relativeFileName, ignored) then
+				isIgnored = true
+			end
+		end
+
+		if isIgnored then
+			goto next_notebox
+		end
+
+		local _, noOfDirs = string.gsub(relativeFileName, "/", "")
+		if noOfDirs - 1 <= noteBoxConfig.maxdepth then
+			noteBox = noteBoxConfig
+			break
+		end
+
+		::next_notebox::
+	end
+
+	return noteBox
+end
+
 --- Refreshes all MetaFly view regions in the current buffer.
---- Uses BufferValidator to find view regions, then replaces their content
+--- Uses BufferValidator to find view regions, then replaces their co , ,ntent
 --- with the latest data from the database.
 function BufferController.refreshViews()
 	local bufnr = vim.api.nvim_get_current_buf()
