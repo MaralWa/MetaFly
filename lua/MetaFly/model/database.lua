@@ -83,7 +83,7 @@ function database:init()
 		self.uri = config.database
 		self.command = "sqlite3 " .. config.database
 	end
-	self.DB = sqlite:extend({
+	self.DB = sqlite({
 		uri = self.uri,
 		NoteBox = self.NoteBox,
 		Note = self.Note,
@@ -133,21 +133,6 @@ function database:callSql(statement, mode)
 	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
 
 	return sqlResult
-end
-
-function database:executeQuery(statement, mode)
-	local sqlResult = self:callSql(statement, mode)
-	local lines = {}
-
-	if sqlResult ~= nil then
-		for line in sqlResult:lines() do
-			table.insert(lines, line)
-		end
-		sqlResult:close()
-	else
-		lines = { "No results returned" }
-	end
-	return lines
 end
 
 function database:executeQuery(statement, mode)
@@ -214,6 +199,22 @@ function database:getPropertyOfCurrentBuffer(property)
 	if #data == 1 then
 		return data[1].property
 	end
+end
+
+---@param aTable string
+---@param aIdNote number
+---@param aMetaDataIds number[]
+function database:deleteOther(aTable, aIdNote, aMetaDataIds)
+	local deleteQuery = "DELETE from "
+		.. aTable
+		.. " where idNote = "
+		.. aIdNote
+		.. " AND idMetaData not in ("
+		.. table.concat(aMetaDataIds, ",")
+		.. ")"
+
+	print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
+	self:select(deleteQuery)
 end
 
 ---comment

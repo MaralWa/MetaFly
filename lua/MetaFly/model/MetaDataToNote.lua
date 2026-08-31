@@ -1,5 +1,5 @@
 local database = require("MetaFly.model.database")
-local logger = require("MetaFly.config"):getInstance():getLogger("MetaDataToNote")
+local logger = require("MetaFly.config"):getInstance():getLogger()
 
 ---@class MetaDataToNote
 ---@field private id number
@@ -69,7 +69,6 @@ function MetaDataToNote.deleteOther(aIdNote, aMetaDataIds)
 end
 
 function MetaDataToNote.count(conditions)
-	print("Counting MetaDataToNote with conditions: " .. vim.inspect(conditions))
 	local results = database.MetaDataToNote:get({ where = conditions })
 	return #results
 end
@@ -97,6 +96,25 @@ function MetaDataToNote:update(newValue)
 			set = { value = newValue },
 		})
 	end
+end
+
+function MetaDataToNote.delete(conditions)
+	return database.MetaDataToNote:remove({ where = conditions })
+end
+
+---Deletes all MetaDataToNote entries for a given metaData/note combination
+---whose position exceeds maxPosition.
+---@param idMetaData number
+---@param idNote number
+---@param maxPosition number
+function MetaDataToNote.deleteByPosition(idMetaData, idNote, maxPosition)
+	local deleteQuery = string.format(
+		"DELETE FROM MetaDataToNote WHERE idMetaData = %d AND idNote = %d AND position > %d",
+		idMetaData,
+		idNote,
+		maxPosition
+	)
+	database:getInstance():select(deleteQuery)
 end
 
 return MetaDataToNote
