@@ -55,6 +55,19 @@ function MetaDataToNote.get(aIdMetaData, aIdNote, aPosition)
 	return MetaDataToNote:new({ id = -1, idMetaData = aIdMetaData, idNote = aIdNote, position = aPosition, value = "" })
 end
 
+---@param aIdNote number
+---@param aMetaDataIds number[]
+function MetaDataToNote.deleteOther(aIdNote, aMetaDataIds)
+	local deleteQuery = "DELETE from MetaDataToNote where idNote = "
+		.. aIdNote
+		.. " AND idMetaData not in ("
+		.. table.concat(aMetaDataIds, ",")
+		.. ")"
+
+	print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
+	database:getInstance():select(deleteQuery)
+end
+
 function MetaDataToNote.count(conditions)
 	local results = database.MetaDataToNote:get({ where = conditions })
 	return #results
