@@ -217,9 +217,9 @@ function YamlHeader:getFromBuffer(bufferNumber)
 	end
 	local headerLines = { line }
 	repeat
+		lineNumber = lineNumber + 1
 		line = vim.fn.getbufoneline(bufferNumber, lineNumber)
 		table.insert(headerLines, line)
-		lineNumber = lineNumber + 1
 	until line == "---"
 	yamlHeader:setHeaderLines(headerLines)
 	return yamlHeader

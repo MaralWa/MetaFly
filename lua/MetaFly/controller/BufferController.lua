@@ -34,6 +34,7 @@ function BufferController.updateMetadata(bufferNumber)
 		return
 	end
 
+	logger.debug("Header lines for buffer " .. bufferNumber .. ": " .. vim.inspect(yamlHeader:getHeaderLines()))
 	DatabaseController.updateNote(bufferName, noteBox, yamlHeader)
 end
 
