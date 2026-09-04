@@ -61,4 +61,30 @@ function Utils.getFileNameWithoutExtension(path)
 	return noext
 end
 
+---Normalise values before storing them in sqlite so that text fields are
+---always proper Lua strings and idNoteBox is a number.  This prevents
+---sqlite.lua from raw-interpolating values that look like SQL expressions
+---(e.g. "26.3-2(16.07-29.07)") instead of binding them as parameters.
+---@param values table
+---@param textFields table
+---@param numberFields table
+---@return table
+function Utils.sanitiseValues(values, textFields, numberFields)
+	local result = {}
+	for k, v in pairs(values) do
+		result[k] = v
+	end
+	for _, field in ipairs(numberFields) do
+		if result[field] ~= nil then
+			result[field] = tonumber(result[field])
+		end
+	end
+	for _, field in ipairs(textFields) do
+		if result[field] ~= nil then
+			result[field] = tostring(result[field])
+		end
+	end
+	return result
+end
+
 return Utils

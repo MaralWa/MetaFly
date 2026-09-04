@@ -15,6 +15,48 @@ local MetaDataToNote = {
 	value = "",
 }
 
+---@param values table
+---@return number  last inserted row id
+local function insertMetaData(values)
+	local db = database:getInstance():getSqlite()
+	-- Order must match the column list in the INSERT statement below.
+	local ordered = {
+		tonumber(values.idMetaData),
+		tonumber(values.idNote),
+		tonumber(values.position),
+		tostring(values.value),
+	}
+	local sqlstmt = require("sqlite.stmt")
+	local stmt = sqlstmt:parse(
+		db.conn,
+		"INSERT INTO MetaDataToNote (idMetaData, idNote, position, value) " .. " VALUES (?, ?, ?, ?)"
+	)
+	for i = 1, 10 do
+		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
+	end
+	stmt:step()
+	stmt:finalize()
+	local row = db:eval("SELECT last_insert_rowid() AS id")
+	return row[1].id
+end
+
+---@param id number
+---@param value string
+local function updateMetaDataValue(id, value)
+	local db = database:getInstance():getSqlite()
+	local ordered = {
+		tostring(value),
+		tonumber(id),
+	}
+	local sqlstmt = require("sqlite.stmt")
+	local stmt = sqlstmt:parse(db.conn, "UPDATE MetaDataToNote SET value=? WHERE id=?")
+	for i = 1, 2 do
+		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
+	end
+	stmt:step()
+	stmt:finalize()
+end
+
 function MetaDataToNote:new(row)
 	local newObject = setmetatable({}, self)
 	self.__index = self
@@ -76,17 +118,10 @@ function MetaDataToNote:update(newValue)
 		newRow.idNote = self.idNote
 		newRow.position = self.position
 		newRow.value = newValue
-		self.id = database.MetaDataToNote:insert(newRow)
+		self.id = insertMetaData(newRow)
 	else
-		database.MetaDataToNote:update({
-			where = { id = self.id },
-			set = { value = newValue },
-		})
+		updateMetaDataValue(self.id, newValue)
 	end
-end
-
-function MetaDataToNote.delete(conditions)
-	return database.MetaDataToNote:remove({ where = conditions })
 end
 
 ---Deletes all MetaDataToNote entries for a given metaData/note combination
