@@ -37,4 +37,7 @@ augroup MetaFlyBufWrite
     autocmd BufWritePost * call luaeval('require("MetaFly.controller.BufferController").updateMetadata(_A)', expand('<abuf>') + 0)
 augroup END
 
-
+augroup MetaFlyRefreshViews
+    autocmd!
+    autocmd BufEnter * call luaeval('require("MetaFly.controller.BufferController").refreshViews()')
+augroup END
