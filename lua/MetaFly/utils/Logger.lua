@@ -438,18 +438,16 @@ local function log(level, ...)
 		return
 	end
 
-	-- Prevent recursive logging if something goes wrong inside the logger.
 	if in_write then
 		return
 	end
 
 	in_write = true
 
+	local args = { ... }
 	local ok, err = pcall(function()
-		local message = format_message(...)
-
+		local message = format_message(unpack(args))
 		local line = format_line(level, message)
-
 		write_line(line)
 	end)
 
