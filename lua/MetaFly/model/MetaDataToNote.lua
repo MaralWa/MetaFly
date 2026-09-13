@@ -79,16 +79,11 @@ end
 ---@param aPosition number
 ---@return MetaDataToNote
 function MetaDataToNote.get(aIdMetaData, aIdNote, aPosition)
-	logger.fmt_debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
+	logger.debug("Getting MetaDataToNote with idMetaData %d and idNote %d", aIdMetaData, aIdNote)
 	local row = { idMetaData = aIdMetaData, idNote = aIdNote, position = aPosition }
 	local entries = database.MetaDataToNote:get({ where = row })
-	logger.fmt_debug(
-		"Found %d entries for MetaDataToNote with idMetaData %d and idNote %d",
-		#entries,
-		aIdMetaData,
-		aIdNote
-	)
-	logger.fmt_debug("Entries: %s", vim.inspect(entries))
+	logger.debug("Found %d entries for MetaDataToNote with idMetaData %d and idNote %d", #entries, aIdMetaData, aIdNote)
+	logger.debug("Entries: %s", vim.inspect(entries))
 	if #entries == 1 then
 		for _, entry in pairs(entries) do
 			return MetaDataToNote:new(entry)
@@ -104,7 +99,7 @@ end
 
 ---@param newValue string
 function MetaDataToNote:update(newValue)
-	logger.fmt_debug(
+	logger.debug(
 		"Updating MetaDataToNote with id %d, idMetaData %d, idNote %d, position %d, value %s",
 		self.id,
 		self.idMetaData,
