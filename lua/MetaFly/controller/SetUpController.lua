@@ -4,7 +4,7 @@ local YamlHeader = require("MetaFly.model.YamlHeader")
 local NotesIterator = require("MetaFly.utils.NotesIterator")
 local DatabaseController = require("MetaFly.controller.DatabaseController")
 
-local logger = Config:getInstance():getLogger()
+local logger = Config:getInstance():getLogger().child("SetUpController")
 
 ---@class SetUpController
 local SetUpController = {}

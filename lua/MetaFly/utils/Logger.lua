@@ -1,6 +1,6 @@
 -- lua/myplugin/logger.lua
 --
--- A small Log4J-style logger for Neovim/LuaJIT.
+-- Log4J-style logger for Neovim/LuaJIT.
 --
 -- Features:
 --   * trace / debug / info / warn / error / fatal
@@ -10,7 +10,8 @@
 --   * configurable number of retained log files
 --   * automatic deletion of old files
 --   * timestamps
---   * logger name
+--   * logger names / contexts
+--   * child loggers
 --   * printf-style formatting
 --   * safe operation: logging errors never crash the plugin
 --
@@ -28,14 +29,24 @@
 --   },
 -- })
 --
--- logger.debug("value = %s", value)
--- logger.info("Plugin started")
--- logger.warn("Something looks suspicious")
--- logger.error("Failed to load %s", filename)
+-- local lsp = logger.child("lsp")
+-- local config = logger.child("config")
+--
+-- lsp.debug("Received response")
+-- config.info("Configuration loaded")
+--
+-- Output:
+--
+-- 2026-09-13 16:42:31.123 DEBUG [myplugin.lsp] Received response
+-- 2026-09-13 16:42:31.124 INFO  [myplugin.config] Configuration loaded
 
 local M = {}
 
 local uv = vim.uv or vim.loop
+
+-----------------------------------------------------------------------
+-- Log levels
+-----------------------------------------------------------------------
 
 local LEVELS = {
 	trace = 10,
@@ -55,12 +66,14 @@ local LEVEL_NAMES = {
 	[60] = "FATAL",
 }
 
+-----------------------------------------------------------------------
+-- Default configuration
+-----------------------------------------------------------------------
 local defaults = {
 	name = "nvim",
 	level = "info",
 	file = nil,
 
-	-- File rotation.
 	rotation = {
 		enabled = true,
 
@@ -69,35 +82,43 @@ local defaults = {
 
 		-- Number of rotated files to retain.
 		--
-		-- 0 = no rotated files
-		-- 5 = logfile + .1 ... .5
+		-- 0 = no backups
+		-- 5 = .1 ... .5
 		max_files = 5,
 	},
 
-	-- Include milliseconds in timestamps.
 	timestamp = true,
 
 	-- Flush after every write.
-	--
-	-- true:
-	--   safer if Neovim crashes, but slightly more filesystem activity.
-	--
-	-- false:
-	--   better performance, but buffered writes may be lost on crash.
 	flush = true,
 }
+
+-----------------------------------------------------------------------
+-- Runtime state
+-----------------------------------------------------------------------
 
 local config = vim.deepcopy(defaults)
 
 local initialized = false
 local file_handle = nil
 local current_size = 0
+
+-- Prevent recursive logger failures.
 local in_write = false
 
+-----------------------------------------------------------------------
+-- Utility functions
+-----------------------------------------------------------------------
+
 local function stderr(message)
-	-- Never let logging itself crash the application.
-	vim.schedule(function()
-		vim.notify("[logger] " .. tostring(message), vim.log.levels.DEBUG)
+	-- Logging must never crash the plugin.
+	--
+	-- vim.notify() itself can potentially be unavailable during very
+	-- early startup/shutdown, so protect it as well.
+	pcall(function()
+		vim.schedule(function()
+			pcall(vim.notify, "[logger] " .. tostring(message), vim.log.levels.DEBUG)
+		end)
 	end)
 end
 
@@ -172,6 +193,10 @@ local function file_size(path)
 	return stat.size or 0
 end
 
+-----------------------------------------------------------------------
+-- File handling
+-----------------------------------------------------------------------
+
 local function close_file()
 	if not file_handle then
 		return
@@ -215,17 +240,24 @@ local function open_file()
 end
 
 local function remove_file(path)
-	if uv.fs_stat(path) then
-		local ok, err = os.remove(path)
+	if not uv.fs_stat(path) then
+		return true
+	end
 
-		if not ok then
-			stderr("Could not remove logfile '" .. path .. "': " .. tostring(err))
-			return false
-		end
+	local ok, err = os.remove(path)
+
+	if not ok then
+		stderr("Could not remove logfile '" .. path .. "': " .. tostring(err))
+
+		return false
 	end
 
 	return true
 end
+
+-----------------------------------------------------------------------
+-- Rotation
+-----------------------------------------------------------------------
 
 local function rotate()
 	if not config.file then
@@ -236,38 +268,40 @@ local function rotate()
 		return true
 	end
 
-	local max_files = math.max(0, math.floor(tonumber(config.rotation.max_files) or 0))
+	local max_files = math.max(0, math.floor(tonumber(config.rotation.max_files) or defaults.rotation.max_files))
 
 	close_file()
 
-	-- No backups requested:
 	--
-	--   myplugin.log
+	-- max_files == 0
 	--
-	-- simply gets replaced by a new empty logfile.
+	-- Just delete the current logfile and create a new one.
+	--
 	if max_files == 0 then
 		remove_file(config.file)
 
 		current_size = 0
+
 		return open_file()
 	end
 
-	-- Delete the oldest logfile first.
+	--
+	-- Delete oldest backup.
 	--
 	-- myplugin.log.5 -> deleted
-	if max_files >= 1 then
-		local oldest = string.format("%s.%d", config.file, max_files)
+	--
+	local oldest = string.format("%s.%d", config.file, max_files)
 
-		remove_file(oldest)
-	end
+	remove_file(oldest)
 
-	-- Shift existing files:
+	--
+	-- Shift backups.
 	--
 	-- .4 -> .5
 	-- .3 -> .4
 	-- .2 -> .3
 	-- .1 -> .2
-	-- current -> .1
+	--
 	for index = max_files - 1, 1, -1 do
 		local source = string.format("%s.%d", config.file, index)
 
@@ -282,7 +316,9 @@ local function rotate()
 		end
 	end
 
+	--
 	-- Current logfile becomes .1.
+	--
 	if uv.fs_stat(config.file) then
 		local target = config.file .. ".1"
 
@@ -292,6 +328,7 @@ local function rotate()
 			stderr(string.format("Could not rotate '%s' -> '%s': %s", config.file, target, tostring(err)))
 
 			current_size = file_size(config.file)
+
 			return open_file()
 		end
 	end
@@ -316,14 +353,19 @@ local function ensure_capacity(bytes_to_write)
 		return true
 	end
 
-	-- If the current logfile already contains data and adding the new
-	-- entry would exceed the configured limit, rotate first.
+	--
+	-- Rotate BEFORE writing the entry.
+	--
 	if current_size > 0 and current_size + bytes_to_write > max_size then
 		return rotate()
 	end
 
 	return true
 end
+
+-----------------------------------------------------------------------
+-- Formatting
+-----------------------------------------------------------------------
 
 local function format_message(...)
 	local argc = select("#", ...)
@@ -334,24 +376,33 @@ local function format_message(...)
 
 	local first = select(1, ...)
 
+	--
+	-- logger.info(non_string_value, ...)
+	--
 	if type(first) ~= "string" then
 		local values = {}
 
-		for i = 1, argc do
-			values[#values + 1] = tostring(select(i, ...))
+		for index = 1, argc do
+			values[#values + 1] = tostring(select(index, ...))
 		end
 
 		return table.concat(values, " ")
 	end
 
+	--
+	-- logger.info("hello")
+	--
 	if argc == 1 then
 		return first
 	end
 
+	--
+	-- logger.info("value = %s", value)
+	--
 	local args = {}
 
-	for i = 2, argc do
-		args[#args + 1] = select(i, ...)
+	for index = 2, argc do
+		args[#args + 1] = select(index, ...)
 	end
 
 	local ok, result = pcall(string.format, first, unpack(args))
@@ -360,11 +411,13 @@ local function format_message(...)
 		return result
 	end
 
-	-- Don't let a malformed format string break the plugin.
+	--
+	-- Never let an invalid format string break the plugin.
+	--
 	local values = { first }
 
-	for i = 1, #args do
-		values[#values + 1] = tostring(args[i])
+	for index = 1, #args do
+		values[#values + 1] = tostring(args[index])
 	end
 
 	return table.concat(values, " ")
@@ -375,13 +428,16 @@ local function timestamp()
 		return ""
 	end
 
-	local now = uv.hrtime()
-	local milliseconds = math.floor((now / 1e6) % 1000)
+	--
+	-- os.date() provides the seconds.
+	-- hrtime() gives us a monotonic clock for milliseconds.
+	--
+	local milliseconds = math.floor((uv.hrtime() / 1e6) % 1000)
 
 	return os.date("%Y-%m-%d %H:%M:%S") .. string.format(".%03d", milliseconds)
 end
 
-local function format_line(level, message)
+local function format_line(logger_name, level, message)
 	local parts = {}
 
 	if config.timestamp then
@@ -389,11 +445,17 @@ local function format_line(level, message)
 	end
 
 	parts[#parts + 1] = LEVEL_NAMES[level] or "?????"
-	parts[#parts + 1] = "[" .. config.name .. "]"
+
+	parts[#parts + 1] = "[" .. logger_name .. "]"
+
 	parts[#parts + 1] = message
 
 	return table.concat(parts, " ") .. "\n"
 end
+
+-----------------------------------------------------------------------
+-- Writing
+-----------------------------------------------------------------------
 
 local function write_line(line)
 	if not config.file then
@@ -410,7 +472,9 @@ local function write_line(line)
 		return false
 	end
 
+	--
 	-- Rotation may have closed/reopened the file.
+	--
 	if not file_handle and not open_file() then
 		return false
 	end
@@ -433,38 +497,151 @@ local function write_line(line)
 	return true
 end
 
-local function log(level, ...)
-	if level < normalize_level(config.level) then
-		return
+-----------------------------------------------------------------------
+-- Logger implementation
+-----------------------------------------------------------------------
+
+local function create_logger(name)
+	local logger = {}
+
+	--
+	-- Full logger name.
+	--
+	-- Example:
+	--
+	--   myplugin
+	--   myplugin.lsp
+	--   myplugin.lsp.client
+	--
+	logger.name = name
+
+	local function write(level, ...)
+		if level < normalize_level(config.level) then
+			return
+		end
+
+		if in_write then
+			return
+		end
+
+		in_write = true
+
+		local args = { ... }
+		local ok, err = pcall(function()
+			local message = format_message(unpack(args))
+
+			local line = format_line(logger.name, level, message)
+
+			write_line(line)
+		end)
+
+		in_write = false
+
+		if not ok then
+			stderr("Logging failed: " .. tostring(err))
+		end
 	end
 
-	if in_write then
-		return
+	---------------------------------------------------------------------
+	-- Logging methods
+	---------------------------------------------------------------------
+
+	function logger.trace(...)
+		write(LEVELS.trace, ...)
 	end
 
-	in_write = true
-
-	local args = { ... }
-	local ok, err = pcall(function()
-		local message = format_message(unpack(args))
-		local line = format_line(level, message)
-		write_line(line)
-	end)
-
-	in_write = false
-
-	if not ok then
-		stderr("Logging failed: " .. tostring(err))
+	function logger.debug(...)
+		write(LEVELS.debug, ...)
 	end
+
+	function logger.info(...)
+		write(LEVELS.info, ...)
+	end
+
+	function logger.warn(...)
+		write(LEVELS.warn, ...)
+	end
+
+	function logger.error(...)
+		write(LEVELS.error, ...)
+	end
+
+	function logger.fatal(...)
+		write(LEVELS.fatal, ...)
+	end
+
+	---------------------------------------------------------------------
+	-- Aliases
+	---------------------------------------------------------------------
+
+	logger.warning = logger.warn
+	logger.critical = logger.fatal
+
+	---------------------------------------------------------------------
+	-- Level handling
+	---------------------------------------------------------------------
+
+	function logger.is_enabled(level)
+		return normalize_level(level) >= normalize_level(config.level)
+	end
+
+	function logger.set_level(level)
+		config.level = normalize_level(level)
+	end
+
+	function logger.get_level()
+		return config.level
+	end
+
+	---------------------------------------------------------------------
+	-- Child logger
+	---------------------------------------------------------------------
+	--
+	-- Example:
+	--
+	-- local lsp = logger.child("lsp")
+	-- local client = lsp.child("client")
+	--
+	-- Result:
+	--
+	-- [myplugin.lsp]
+	-- [myplugin.lsp.client]
+	--
+	---------------------------------------------------------------------
+
+	function logger.child(child_name)
+		if child_name == nil or tostring(child_name) == "" then
+			return logger
+		end
+
+		child_name = tostring(child_name)
+
+		return create_logger(logger.name .. "." .. child_name)
+	end
+
+	---------------------------------------------------------------------
+	-- Context alias
+	---------------------------------------------------------------------
+
+	logger.context = logger.child
+
+	return logger
 end
+
+-----------------------------------------------------------------------
+-- Root logger
+-----------------------------------------------------------------------
+
+local root_logger = create_logger(config.name)
 
 -----------------------------------------------------------------------
 -- Public API
 -----------------------------------------------------------------------
 
---- Configure the logger.
+--- Configure the root logger.
 ---
 ---@param user_config table|nil
+---@return table logger
 function M.setup(user_config)
 	close_file()
 
@@ -482,60 +659,65 @@ function M.setup(user_config)
 
 	initialized = true
 
+	--
+	-- Recreate root logger because its name comes from config.
+	--
+	root_logger = create_logger(config.name)
+
 	if config.file then
 		open_file()
 	end
 
-	return M
+	return root_logger
 end
 
---- Return the current logger configuration.
+--- Get the root logger.
+---
+---@return table
+function M.get_logger()
+	return root_logger
+end
+
+--- Create a child logger from the root logger.
+---
+---@param name string
+---@return table
+function M.child(name)
+	return root_logger.child(name)
+end
+
+--- Alias for child().
+function M.context(name)
+	return root_logger.child(name)
+end
+
+--- Return a copy of the current configuration.
+---
+---@return table
 function M.get_config()
 	return vim.deepcopy(config)
 end
 
---- Set the log level at runtime.
+--- Set the global log level.
 ---
 ---@param level string|number
 function M.set_level(level)
 	config.level = normalize_level(level)
 end
 
---- Return the current numeric log level.
+--- Get the global log level.
+---
+---@return number
 function M.get_level()
 	return config.level
 end
 
---- Check whether a log level is enabled.
+--- Check whether a level is enabled.
 ---
 ---@param level string|number
 ---@return boolean
 function M.is_enabled(level)
 	return normalize_level(level) >= normalize_level(config.level)
-end
-
-function M.trace(...)
-	log(LEVELS.trace, ...)
-end
-
-function M.debug(...)
-	log(LEVELS.debug, ...)
-end
-
-function M.info(...)
-	log(LEVELS.info, ...)
-end
-
-function M.warn(...)
-	log(LEVELS.warn, ...)
-end
-
-function M.error(...)
-	log(LEVELS.error, ...)
-end
-
-function M.fatal(...)
-	log(LEVELS.fatal, ...)
 end
 
 --- Flush the logfile.
@@ -553,10 +735,9 @@ function M.close()
 end
 
 --- Reopen the logfile.
----
---- Useful if the logfile was externally moved/deleted.
 function M.reopen()
 	close_file()
+
 	current_size = 0
 
 	if config.file then
@@ -571,13 +752,53 @@ function M.rotate()
 	return rotate()
 end
 
---- Return whether the logger has been configured.
+--- Return whether the logger has been initialized.
 function M.is_initialized()
 	return initialized
 end
 
--- Convenience aliases matching some common logger APIs.
+-----------------------------------------------------------------------
+-- Root logger methods
+-----------------------------------------------------------------------
+--
+-- This allows:
+--
+--   local logger = require("myplugin.logger")
+--
+--   logger.info("hello")
+--
+-- instead of requiring:
+--
+--   local logger = require("myplugin.logger").get_logger()
+--
+-----------------------------------------------------------------------
+
+M.trace = function(...)
+	root_logger.trace(...)
+end
+
+M.debug = function(...)
+	root_logger.debug(...)
+end
+
+M.info = function(...)
+	root_logger.info(...)
+end
+
+M.warn = function(...)
+	root_logger.warn(...)
+end
+
 M.warning = M.warn
+
+M.error = function(...)
+	root_logger.error(...)
+end
+
+M.fatal = function(...)
+	root_logger.fatal(...)
+end
+
 M.critical = M.fatal
 
 return M
