@@ -1,4 +1,4 @@
-local logger = require("MetaFly.config").getInstance():getLogger("SqlBuilder")
+local logger = require("MetaFly.config").getInstance():getLogger().child("utils").child("SqlBuilder")
 
 SqlBuilder = {}
 

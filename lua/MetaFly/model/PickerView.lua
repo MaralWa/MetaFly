@@ -1,5 +1,5 @@
 local MetaFlyView = require("MetaFly.model.MetaFlyView")
-local logger = require("MetaFly.config"):getInstance():getLogger("PickerView")
+local logger = require("MetaFly.config"):getInstance():getLogger().child("view").child("PickerView")
 
 PickerView = {}
 PickerView.__index = PickerView

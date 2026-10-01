@@ -1,6 +1,6 @@
 local database = require("MetaFly.model.database")
 
-local logger = require("MetaFly.config"):getInstance():getLogger("JsonDataToNote")
+local logger = require("MetaFly.config"):getInstance():getLogger().child("model").child("JsonDataToNote")
 
 ---@class JsonDataToNote
 ---@field private id number

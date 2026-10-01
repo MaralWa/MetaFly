@@ -1,5 +1,5 @@
 local SqlBulider = require("MetaFly.utils.SqlBuilder")
-local logger = require("MetaFly.config"):getInstance():getLogger("MetaFlyView")
+local logger = require("MetaFly.config"):getInstance():getLogger().child("model").child("MetaFlyView")
 local MetaFlyView = {}
 
 ---@class MetaFlyView

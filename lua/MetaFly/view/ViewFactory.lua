@@ -4,7 +4,7 @@ local Utils = require("MetaFly.utils.Utils")
 
 local ViewFactory = {}
 
-local logger = require("MetaFly.config"):getInstance():getLogger("ViewFactory")
+local logger = require("MetaFly.config"):getInstance():getLogger().child("view").child("ViewFactory")
 
 function ViewFactory.resolveFileName(viewName)
 	logger.info("Resolving file name for view: " .. viewName)

@@ -5,7 +5,7 @@ local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 
 local ViewFactory = require("MetaFly.view.ViewFactory")
-local logger = require("MetaFly/config"):getInstance():getLogger()
+local logger = require("MetaFly/config"):getInstance():getLogger().child("picker").child("NotePicker")
 
 NotePicker = {}
 

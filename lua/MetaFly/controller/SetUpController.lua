@@ -4,13 +4,13 @@ local YamlHeader = require("MetaFly.model.YamlHeader")
 local NotesIterator = require("MetaFly.utils.NotesIterator")
 local DatabaseController = require("MetaFly.controller.DatabaseController")
 
-local logger = Config:getInstance():getLogger().child("SetUpController")
+local logger = Config:getInstance():getLogger().child("controller").child("SetUpController")
 
 ---@class SetUpController
 local SetUpController = {}
 
 function SetUpController:new()
-	logger = require("MetaFly.config"):getInstance():getLogger()
+	logger = require("MetaFly.config"):getInstance():getLogger().child("controller").child("SetUpController")
 	local newObject = setmetatable({}, self)
 	self.__index = self
 

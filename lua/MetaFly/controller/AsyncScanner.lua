@@ -31,7 +31,7 @@ end
 ---
 --- @param opts table Plugin options containing the noteBoxes configuration
 function AsyncScanner.scanInBackground(opts)
-	logger = require("MetaFly.config"):getInstance():getLogger().child("AsyncScanner")
+	logger = require("MetaFly.config"):getInstance():getLogger().child("controller").child("AsyncScanner")
 
 	local noteBoxConfigs = opts["noteBoxes"]
 	if not noteBoxConfigs or next(noteBoxConfigs) == nil then
