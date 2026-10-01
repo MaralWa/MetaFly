@@ -1,5 +1,6 @@
 local config = require("MetaFly.config"):getInstance()
-local logger = config:getLogger("CommandHandler")
+
+local logger = config:getLogger().child("command").get("CommandHandler")
 
 local CommandHandler = {}
 

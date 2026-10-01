@@ -4,7 +4,7 @@ local BufferValidator = require("MetaFly.view.BufferValidator")
 local ViewFactory = require("MetaFly.view.ViewFactory")
 local DatabaseController = require("MetaFly.controller.DatabaseController")
 local config = require("MetaFly.config"):getInstance()
-local logger = config:getLogger("BufferController")
+local logger = config:getLogger().child("controller").child("BufferController")
 
 local BufferController = {}
 

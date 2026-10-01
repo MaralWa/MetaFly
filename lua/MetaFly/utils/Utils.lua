@@ -2,7 +2,7 @@ local loop = vim.loop
 
 Utils = {}
 
-logger = require("MetaFly.config"):getInstance():getLogger()
+logger = require("MetaFly.config"):getInstance():getLogger().child("utils").child("Utils")
 
 Utils.isDirectoryReadable = function(path)
 	local stat = loop.lfs.fs_stat(path)

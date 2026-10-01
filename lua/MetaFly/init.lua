@@ -8,7 +8,7 @@ MetaFly.noteBoxes = {}
 function MetaFly.setup(opts)
 	local config = require("MetaFly.config"):getInstance()
 	config:setOptions(opts)
-	logger = config:getLogger()
+	logger = config:getLogger().child("setup")
 	local db = require("MetaFly.model.database"):getInstance()
 	logger.info("MetaFly Database initialized at: " .. db:getUri())
 

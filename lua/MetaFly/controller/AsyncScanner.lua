@@ -31,7 +31,7 @@ end
 ---
 --- @param opts table Plugin options containing the noteBoxes configuration
 function AsyncScanner.scanInBackground(opts)
-	logger = require("MetaFly.config"):getInstance():getLogger("AsyncScanner")
+	logger = require("MetaFly.config"):getInstance():getLogger().child("controller").child("AsyncScanner")
 
 	local noteBoxConfigs = opts["noteBoxes"]
 	if not noteBoxConfigs or next(noteBoxConfigs) == nil then
@@ -51,10 +51,7 @@ function AsyncScanner.scanInBackground(opts)
 	-- Create the SetUpController instance that performs the actual scanning
 	local setUpController = require("MetaFly.controller.SetUpController"):new()
 
-	vim.notify(
-		"MetaFly: Starting background scan of " .. total .. " note box(es)...",
-		vim.log.levels.INFO
-	)
+	vim.notify("MetaFly: Starting background scan of " .. total .. " note box(es)...", vim.log.levels.INFO)
 	logger.info("Starting async scan of " .. total .. " note box(es)")
 
 	--- Process the next note box in the queue.
@@ -75,10 +72,7 @@ function AsyncScanner.scanInBackground(opts)
 		local name = config.name or "unknown"
 		local progress = build_progress_bar(current, total)
 
-		vim.notify(
-			string.format("MetaFly: %s Scanning '%s'...", progress, name),
-			vim.log.levels.INFO
-		)
+		vim.notify(string.format("MetaFly: %s Scanning '%s'...", progress, name), vim.log.levels.INFO)
 		logger.info("Scanning note box: " .. name)
 
 		-- Use the existing scanNoteBox method without modification

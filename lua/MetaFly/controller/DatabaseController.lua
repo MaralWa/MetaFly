@@ -9,7 +9,7 @@ local YamlHeader = require("MetaFly.model.YamlHeader")
 local NotesIterator = require("MetaFly.utils.NotesIterator")
 local utils = require("MetaFly.utils.utils")
 
-local logger = Config:getInstance():getLogger("DatabaseController")
+local logger = Config:getInstance():getLogger().child("controller").child("DatabaseController")
 
 local requiredNoteData = {
 	"noteId",
