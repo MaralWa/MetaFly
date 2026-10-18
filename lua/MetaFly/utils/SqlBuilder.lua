@@ -1,4 +1,5 @@
-local logger = require("MetaFly.config").getInstance():getLogger().child("utils").child("SqlBuilder")
+local logger = require("MetaFly.config").getInstance():getLogger("SqlBuilder")
+local Utils = require("MetaFly.utils.Utils")
 
 SqlBuilder = {}
 
@@ -93,10 +94,21 @@ function SqlBuilder:withFrom(tables)
 end
 
 function SqlBuilder:withWhere(condition)
-	logger.debug("Adding WHERE condition: " .. tostring(condition)) -- Debug print
+	logger.debug("Adding WHERE condition: " .. tostring(condition))
 	if condition == nil or condition == "" then
 		return self
 	end
+
+	local placeholders = Utils.extractPlaceholders(condition)
+	for _, placeholder in ipairs(placeholders) do
+		local bufferValue = require("MetaFly.model.database"):getInstance():getPropertyOfCurrentBuffer(placeholder)
+		if bufferValue ~= nil then
+			condition = condition:gsub("{{" .. placeholder .. "}}", "'" .. bufferValue .. "'")
+		else
+			logger.warn("No value found for placeholder: " .. placeholder)
+		end
+	end
+
 	if self.where == "" then
 		self.where = condition
 	else
@@ -115,7 +127,7 @@ function SqlBuilder:isValidInherit(inherit)
 end
 
 function SqlBuilder:withInherits(inherits)
-	logger.debug("Processing inherits: " .. vim.inspect(inherits)) -- Debug print
+	logger.debug("Processing inherits: " .. vim.inspect(inherits))
 	if inherits == nil or #inherits == 0 then
 		return self
 	end
@@ -125,10 +137,10 @@ function SqlBuilder:withInherits(inherits)
 			if bufferValue ~= nil then
 				self:withWhere(inherit .. " = '" .. bufferValue .. "'")
 			else
-				print("Warning: No value found for inherit condition: " .. inherit)
+				logger.warn("No value found for inherit condition: " .. inherit)
 			end
 		else
-			print("Warning: Ignoring invalid inherit condition: " .. inherit)
+			logger.warn("Ignoring invalid inherit condition: " .. inherit)
 		end
 	end
 	return self
@@ -176,8 +188,8 @@ function SqlBuilder:build()
 	if #self.groupBy > 0 then
 		query = query .. " GROUP BY " .. table.concat(self.groupBy, ", ")
 	end
-	print("Built SQL Query: " .. query) -- Debug print
-	return string.gsub(query, '"', '\\"')
+	logger.debug("Built SQL Query: " .. query)
+	return query
 end
 
 return SqlBuilder
