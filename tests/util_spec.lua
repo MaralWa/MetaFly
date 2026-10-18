@@ -1,6 +1,6 @@
-local util = require("MetaFly.utils.util")
+local util = require("MetaFly.utils.Utils")
 
-describe("MetaFly.utils.util", function()
+describe("MetaFly.utils.Utils", function()
 	it("entfernt einen abschließenden Punkt", function()
 		assert.are.equal("file.txt", util.remove_suffix("file.txt.", "."))
 	end)
@@ -15,5 +15,11 @@ describe("MetaFly.utils.util", function()
 
 	it("gibt unverändert zurück, wenn suffix länger als string", function()
 		assert.are.equal("a", util.remove_suffix("a", "longsuffix"))
+	end)
+
+	it("Checks if placeholders are correctly extracted from a string", function()
+		local input = "Hello, {{name}}! Welcome to {{place}}."
+		local expected = { "name", "place" }
+		assert.are.same(expected, util.extractPlaceholders(input))
 	end)
 end)

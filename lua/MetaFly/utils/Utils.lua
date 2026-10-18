@@ -61,6 +61,27 @@ function Utils.getFileNameWithoutExtension(path)
 	return noext
 end
 
+function Utils.remove_suffix(str, suffix)
+	if suffix == "" or str:sub(-#suffix) ~= suffix then
+		return str
+	end
+	return str:sub(1, #str - #suffix)
+end
+
+--- Extracts placeholders from a string in the format
+--- {{placeholder}} and returns them as a table of strings.
+--- @param str string
+--- @return table of strings
+function Utils.extractPlaceholders(str)
+	local result = {}
+
+	for word in str:gmatch("{{([a-zA-Z]*)}}") do
+		table.insert(result, word)
+	end
+
+	return result
+end
+
 ---Normalise values before storing them in sqlite so that text fields are
 ---always proper Lua strings and idNoteBox is a number.  This prevents
 ---sqlite.lua from raw-interpolating values that look like SQL expressions

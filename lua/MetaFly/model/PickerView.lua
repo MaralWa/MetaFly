@@ -25,6 +25,13 @@ function PickerView:new(values)
 	setmetatable(newObject, self)
 	newObject.columns = { "Note.title", "NoteBox.path || '/' || Note.fileName" }
 	newObject.from = { "Note", "NoteBox" }
+	if values.from ~= nil then
+		for _, fromTable in ipairs(values.from) do
+			if not vim.tbl_contains(newObject.from, fromTable) then
+				table.insert(newObject.from, fromTable)
+			end
+		end
+	end
 	newObject.sqlMode = "csv"
 	if values["where"] then
 		newObject.where = "Note.idNoteBox = NoteBox.id and ( " .. values["where"] .. " )"

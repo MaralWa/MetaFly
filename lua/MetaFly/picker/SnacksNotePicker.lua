@@ -33,12 +33,15 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	local database = require("MetaFly.model.database"):getInstance()
 	local sqlStatement = pickerView:getSelectStatement()
 	logger.info("SnacksNotePicker.notes sqlStatement: " .. sqlStatement)
+	logger.info("SnacksNotePicker.notes SQL Moted: " .. pickerView.sqlMode)
 	local sqlResult = database:callSql(pickerView:getSelectStatement(), pickerView.sqlMode)
 
 	local items = {}
 	if sqlResult ~= nil then
 		for line in sqlResult:lines() do
-			local title, fileName = string.match(line, "(.*)%,(.*)")
+			logger.debug("Processing line: " .. line)
+			local title, fileName = string.match(line, "(.*)%,(.*)%s+$")
+			logger.debug("Extracted title: " .. tostring(title) .. ", fileName: " .. tostring(fileName))
 			if title and fileName then
 				table.insert(items, {
 					text = title:gsub('"', ""),
