@@ -103,7 +103,10 @@ function SqlBuilder:withWhere(condition)
 	for _, placeholder in ipairs(placeholders) do
 		local bufferValue = require("MetaFly.model.database"):getInstance():getPropertyOfCurrentBuffer(placeholder)
 		if bufferValue ~= nil then
-			condition = condition:gsub("{{" .. placeholder .. "}}", "'" .. bufferValue .. "'")
+			local sqlValue = "'" .. tostring(bufferValue):gsub("'", "''") .. "'"
+			condition = condition:gsub("{{" .. placeholder .. "}}", function()
+				return sqlValue
+			end)
 		else
 			logger.warn("No value found for placeholder: " .. placeholder)
 		end
