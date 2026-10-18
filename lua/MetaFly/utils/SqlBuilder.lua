@@ -189,7 +189,7 @@ function SqlBuilder:build()
 		query = query .. " GROUP BY " .. table.concat(self.groupBy, ", ")
 	end
 	logger.debug("Built SQL Query: " .. query)
-	return query
+	return string.gsub(query, '"', '\\"')
 end
 
 return SqlBuilder
