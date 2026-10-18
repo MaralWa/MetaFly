@@ -61,6 +61,13 @@ function Utils.getFileNameWithoutExtension(path)
 	return noext
 end
 
+function Utils.remove_suffix(str, suffix)
+	if suffix == "" or str:sub(-#suffix) ~= suffix then
+		return str
+	end
+	return str:sub(1, #str - #suffix)
+end
+
 --- Extracts placeholders from a string in the format
 --- {{placeholder}} and returns them as a table of strings.
 --- @param str string
