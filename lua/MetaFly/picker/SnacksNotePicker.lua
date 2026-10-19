@@ -40,7 +40,8 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	if sqlResult ~= nil then
 		for line in sqlResult:lines() do
 			logger.debug("Processing line: " .. line)
-			local title, fileName = string.match(line, "(.*)%,(.*)%s+$")
+			local title, fileName = string.match(line, "(.*)%,(.*)")
+			fileName = fileName:gsub("%s+$", "")
 			logger.debug("Extracted title: " .. tostring(title) .. ", fileName: " .. tostring(fileName))
 			if title and fileName then
 				table.insert(items, {
