@@ -86,7 +86,10 @@ function AsyncScanner.scanInBackground(opts)
 		logger.info(string.format("%s Scanning '%s'...", progress, name))
 
 		-- Use the existing scanNoteBox method without modification
-		setUpController:scanNoteBox(config)
+		local ok, err = pcall(setUpController.scanNoteBox, setUpController, config)
+		if not ok then
+			logger.error("Scanning note box '" .. name .. "' failed: " .. tostring(err))
+		end
 
 		-- Yield to the event loop before processing the next note box
 		if not lifecycle.is_shutting_down() then

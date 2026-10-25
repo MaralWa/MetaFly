@@ -236,6 +236,7 @@ function YamlHeader:getFromFile(fileName)
 	local headerLines = {}
 	for line in file:lines() do
 		if #headerLines == 0 and line ~= "---" then
+			file:close()
 			return yamlHeader, "file " .. fileName .. " does not start with yaml header"
 		end
 		table.insert(headerLines, line)
@@ -243,6 +244,7 @@ function YamlHeader:getFromFile(fileName)
 			break
 		end
 	end
+	file:close()
 	yamlHeader:setHeaderLines(headerLines)
 	return yamlHeader
 end
