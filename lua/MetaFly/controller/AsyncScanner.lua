@@ -4,6 +4,8 @@
 
 local AsyncScanner = {}
 
+local lifecycle = require("MetaFly.lifecycle")
+
 local logger = nil
 
 --- Build a text-based progress bar string.
@@ -26,8 +28,8 @@ end
 --- The existing SetUpController:scanNoteBox() method is called unchanged
 --- for the actual scanning and YAML header processing.
 ---
---- A simple text progress bar is shown via vim.notify() to indicate
---- how many note boxes have been processed.
+--- Only start and end notifications are shown; per-note-box progress is
+--- logged only. Scanning aborts once the lifecycle is shutting down.
 ---
 --- @param opts table Plugin options containing the noteBoxes configuration
 function AsyncScanner.scanInBackground(opts)
@@ -51,7 +53,11 @@ function AsyncScanner.scanInBackground(opts)
 	-- Create the SetUpController instance that performs the actual scanning
 	local setUpController = require("MetaFly.controller.SetUpController"):new()
 
-	vim.notify("MetaFly: Starting background scan of " .. total .. " note box(es)...", vim.log.levels.INFO)
+	if lifecycle.is_shutting_down() then
+		return
+	end
+
+	pcall(vim.notify, "MetaFly: Starting background scan of " .. total .. " note box(es)...", vim.log.levels.INFO)
 	logger.info("Starting async scan of " .. total .. " note box(es)")
 
 	--- Process the next note box in the queue.
@@ -59,11 +65,16 @@ function AsyncScanner.scanInBackground(opts)
 	--- via vim.schedule() so the event loop can handle other events
 	--- (keystrokes, UI redraws, etc.) in between.
 	local function processNextNoteBox()
+		if lifecycle.is_shutting_down() then
+			logger.info("Shutdown active, aborting background scan.")
+			return
+		end
+
 		current = current + 1
 
 		if current > total then
 			-- All note boxes have been processed
-			vim.notify("MetaFly: Scan complete ✓", vim.log.levels.INFO)
+			pcall(vim.notify, "MetaFly: Scan complete ✓", vim.log.levels.INFO)
 			logger.info("Background scan complete.")
 			return
 		end
@@ -72,14 +83,18 @@ function AsyncScanner.scanInBackground(opts)
 		local name = config.name or "unknown"
 		local progress = build_progress_bar(current, total)
 
-		vim.notify(string.format("MetaFly: %s Scanning '%s'...", progress, name), vim.log.levels.INFO)
-		logger.info("Scanning note box: " .. name)
+		logger.info(string.format("%s Scanning '%s'...", progress, name))
 
 		-- Use the existing scanNoteBox method without modification
-		setUpController:scanNoteBox(config)
+		local ok, err = pcall(setUpController.scanNoteBox, setUpController, config)
+		if not ok then
+			logger.error("Scanning note box '" .. name .. "' failed: " .. tostring(err))
+		end
 
 		-- Yield to the event loop before processing the next note box
-		vim.schedule(processNextNoteBox)
+		if not lifecycle.is_shutting_down() then
+			vim.schedule(processNextNoteBox)
+		end
 	end
 
 	-- Defer the first step so that setup() returns immediately

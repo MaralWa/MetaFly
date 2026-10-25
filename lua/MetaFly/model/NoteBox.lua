@@ -158,6 +158,7 @@ function NoteBox:scanForNotes()
 		for file in p:lines() do
 			table.insert(fileList, file)
 		end
+		p:close()
 	end
 	return findCommand, fileList
 end
