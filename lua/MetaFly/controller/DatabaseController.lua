@@ -126,7 +126,7 @@ function DatabaseController.updateNote(fileName, noteBox, yamlHeader)
 		table.insert(errors, 1, "Cannot update note:" .. fileName)
 		return
 	end
-	local ok, noteOrError = pcall(Note.saveValues, noteData)
+	local ok, noteOrError = xpcall(Note.saveValues, debug.traceback, noteData)
 	if not ok then
 		logger.error("Database error while saving note '" .. fileName .. "': " .. tostring(noteOrError))
 		return
@@ -137,7 +137,7 @@ function DatabaseController.updateNote(fileName, noteBox, yamlHeader)
 		return
 	end
 
-	local okMeta, metaError = pcall(DatabaseController.updateMetaData, note, yamlHeader:getMetaData())
+	local okMeta, metaError = xpcall(DatabaseController.updateMetaData, debug.traceback, note, yamlHeader:getMetaData())
 	if not okMeta then
 		logger.error("Database error while saving meta data of '" .. fileName .. "': " .. tostring(metaError))
 	end

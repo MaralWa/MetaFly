@@ -135,20 +135,38 @@ local function sanitiseValues(values)
 	return result
 end
 
+---Finalize a statement. A failing finalize (e.g. "unable to open database file")
+---is raised as a Lua error with context. If an earlier error is given, both are reported.
+---@param stmt table
+---@param context string
+---@param previousError string|nil
+local function safeFinalize(stmt, context, previousError)
+	local ok, err = pcall(stmt.finalize, stmt)
+	if not ok then
+		local msg = context .. " failed: could not finalize statement: " .. tostring(err)
+		if previousError ~= nil then
+			msg = msg .. " (after: " .. previousError .. ")"
+		end
+		error(msg, 0)
+	end
+end
+
 ---Run stmt:step() and raise a Lua error for non-success sqlite result codes.
 ---The statement is finalized before the error is raised.
 ---@param stmt table
 ---@param context string
 local function checkedStep(stmt, context)
 	local ok, rc = pcall(stmt.step, stmt)
+	local failure = nil
 	if not ok then
-		stmt:finalize()
-		error(context .. " failed: " .. tostring(rc), 0)
+		failure = context .. " failed: " .. tostring(rc)
+	elseif rc ~= nil and rc ~= 100 and rc ~= 101 then
+		-- sqlite3 codes: 100 = SQLITE_ROW, 101 = SQLITE_DONE
+		failure = context .. " failed with sqlite code " .. tostring(rc)
 	end
-	-- sqlite3 codes: 100 = SQLITE_ROW, 101 = SQLITE_DONE
-	if rc ~= nil and rc ~= 100 and rc ~= 101 then
-		stmt:finalize()
-		error(context .. " failed with sqlite code " .. tostring(rc), 0)
+	if failure ~= nil then
+		safeFinalize(stmt, context, failure)
+		error(failure, 0)
 	end
 end
 
@@ -184,7 +202,7 @@ local function insertNote(values)
 		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
 	end
 	checkedStep(stmt, "INSERT Note")
-	stmt:finalize()
+	safeFinalize(stmt, "INSERT Note")
 	local row = db:eval("SELECT last_insert_rowid() AS id")
 	return row[1].id
 end
@@ -217,7 +235,7 @@ local function updateNote(id, values)
 		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
 	end
 	checkedStep(stmt, "UPDATE Note")
-	stmt:finalize()
+	safeFinalize(stmt, "UPDATE Note")
 end
 
 ---@param values table
