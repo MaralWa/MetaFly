@@ -135,6 +135,23 @@ local function sanitiseValues(values)
 	return result
 end
 
+---Run stmt:step() and raise a Lua error for non-success sqlite result codes.
+---The statement is finalized before the error is raised.
+---@param stmt table
+---@param context string
+local function checkedStep(stmt, context)
+	local ok, rc = pcall(stmt.step, stmt)
+	if not ok then
+		stmt:finalize()
+		error(context .. " failed: " .. tostring(rc), 0)
+	end
+	-- sqlite3 codes: 100 = SQLITE_ROW, 101 = SQLITE_DONE
+	if rc ~= nil and rc ~= 100 and rc ~= 101 then
+		stmt:finalize()
+		error(context .. " failed with sqlite code " .. tostring(rc), 0)
+	end
+end
+
 ---Insert a note row using positional parameters so that field values with
 ---special characters (parentheses, dots, apostrophes …) are always safely
 ---bound.  Named-parameter binding in sqlite.lua skips strings that look like
@@ -166,7 +183,7 @@ local function insertNote(values)
 	for i = 1, 10 do
 		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
 	end
-	stmt:step()
+	checkedStep(stmt, "INSERT Note")
 	stmt:finalize()
 	local row = db:eval("SELECT last_insert_rowid() AS id")
 	return row[1].id
@@ -199,7 +216,7 @@ local function updateNote(id, values)
 	for i = 1, 11 do
 		stmt:bind(i, ordered[i] ~= nil and ordered[i] or "")
 	end
-	stmt:step()
+	checkedStep(stmt, "UPDATE Note")
 	stmt:finalize()
 end
 
