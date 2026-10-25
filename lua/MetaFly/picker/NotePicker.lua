@@ -40,7 +40,6 @@ NotePicker.notes = function(pickerView, opts)
 		end
 	end
 	logger.info("size of notesTable: " .. #notesTable)
-	print("size of notesTable: " .. #notesTable)
 
 	-- Komplett neue opts Tabelle für jeden Aufruf
 	local picker_opts = opts and vim.deepcopy(opts) or {}

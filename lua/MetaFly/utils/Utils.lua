@@ -43,6 +43,29 @@ Utils.findFileByBasename = function(dir, basename, extensions)
 	return nil
 end
 
+function Utils.get_buffer_names()
+	local names = {}
+	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+		logger.debug(
+			"Buffer: "
+				.. buf
+				.. ", loaded: "
+				.. tostring(vim.api.nvim_buf_is_loaded(buf))
+				.. ", listed: "
+				.. tostring(vim.bo[buf].buflisted)
+		)
+		-- nur geladene, gelistete Buffer mit Dateinamen
+		-- if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buflisted then
+		if vim.bo[buf].buflisted then
+			local name = vim.api.nvim_buf_get_name(buf) -- vollständiger, absoluter Pfad
+			if name ~= "" then
+				table.insert(names, name)
+			end
+		end
+	end
+	return names
+end
+
 ---Returns the basename of a path without its file extension.
 ---@param path string
 ---@return string
