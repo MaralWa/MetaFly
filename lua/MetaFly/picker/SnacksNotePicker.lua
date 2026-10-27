@@ -1,7 +1,6 @@
 local ViewFactory = require("MetaFly.view.ViewFactory")
 local pickerViewModule = require("MetaFly.model.PickerView")
 local logger = require("MetaFly.config"):getInstance():getLogger().child("picker").child("SnacksNotePicker")
-
 local SnacksNotePicker = {}
 
 ---@param fileName string|nil
