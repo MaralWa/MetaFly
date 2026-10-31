@@ -8,7 +8,9 @@ local logger = config:getLogger().child("controller").child("NotesPickerControll
 local NotesPickerController = {}
 
 function NotesPickerController.showBufferPicker()
-	picker.bufferView()
+	local view = require("MetaFly.model.BufferPickerView").new({})
+	local options = {}
+	picker.notes(view, options)
 end
 
 function NotesPickerController.showPicker(pickerName)

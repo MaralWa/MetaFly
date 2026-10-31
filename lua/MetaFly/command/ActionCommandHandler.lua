@@ -18,7 +18,7 @@ ActionCommandHandler.lastAction = function()
 end
 
 -- The ordered list of supported actions.
-ActionCommandHandler.ACTIONS = { "open", "view", "select", "query", "search", "explore", "refresh" }
+ActionCommandHandler.ACTIONS = { "open", "buffers", "view", "select", "query", "search", "explore", "refresh" }
 
 -- Dispatch table mapping action names to their handler functions.
 -- Populated after the handler functions are defined below.
@@ -78,6 +78,12 @@ function ActionCommandHandler.executeOpen(args)
 	notesPickerController.showPicker(args)
 end
 
+function ActionCommandHandler.executeBuffers(args)
+	logger.info("MetaFly action: buffers" .. (args and (" args=" .. args) or ""))
+	vim.notify("MetaFly buffers: " .. tostring(args), vim.log.levels.INFO)
+	notesPickerController.showBufferPicker()
+end
+
 -- Display a view, optionally specified by args.
 -- @param args  string|nil  Free-form argument string (e.g. a view name or path).
 function ActionCommandHandler.executeView(args)
@@ -126,6 +132,7 @@ end
 
 -- Wire up the dispatch table so executeAction can resolve handlers by name.
 actionDispatch["open"] = ActionCommandHandler.executeOpen
+actionDispatch["buffers"] = ActionCommandHandler.executeBuffers
 actionDispatch["view"] = ActionCommandHandler.executeView
 actionDispatch["select"] = ActionCommandHandler.executeSelect
 actionDispatch["query"] = ActionCommandHandler.executeQuery

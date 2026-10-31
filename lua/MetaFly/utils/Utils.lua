@@ -43,7 +43,7 @@ Utils.findFileByBasename = function(dir, basename, extensions)
 	return nil
 end
 
-function Utils.get_buffer_names()
+function Utils.getBufferNames()
 	local names = {}
 	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
 		logger.debug(
