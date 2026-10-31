@@ -25,11 +25,11 @@ function ViewFactory.readFromFile(viewName)
 
 	create["Picker"] = function(values)
 		logger.debug("Creating picker view from values: " .. vim.inspect(values))
-		return require("MetaFly.model.PickerView"):new(values)
+		return require("MetaFly.model.PickerView").new(values)
 	end
 	create["View"] = function(values)
 		logger.debug("Creating picker view from values: " .. vim.inspect(values))
-		return require("MetaFly.model.MetaFlyView"):new(values)
+		return require("MetaFly.model.MetaFlyView").new(values)
 	end
 
 	logger.info("Resolving file name for view: " .. viewName)
