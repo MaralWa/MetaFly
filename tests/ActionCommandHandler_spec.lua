@@ -5,13 +5,13 @@ describe("MetaFly.command.ActionCommandHandler", function()
 	-- Basic structure checks
 	-- -----------------------------------------------------------------------
 
-	it("should export an ACTIONS table with the seven supported actions", function()
+	it("should export an ACTIONS table with the eight supported actions", function()
 		assert.is_table(ActionCommandHandler.ACTIONS)
 		local lookup = {}
 		for _, a in ipairs(ActionCommandHandler.ACTIONS) do
 			lookup[a] = true
 		end
-		local expected = { "open", "view", "select", "query", "search", "explore", "refresh" }
+		local expected = { "open", "buffers", "view", "select", "query", "search", "explore", "refresh" }
 		assert.are.equal(#expected, #ActionCommandHandler.ACTIONS)
 		for _, action in ipairs(expected) do
 			assert.is_true(lookup[action], "Expected action '" .. action .. "' to be present")
