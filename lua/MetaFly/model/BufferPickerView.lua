@@ -11,19 +11,19 @@ WITH input(datei) AS (
   VALUES {{BUFFER_PATHS}}),
 notes AS (
   SELECT Note.id,
-         Note.title,
-         NoteBox.path || '/' || Note.fileName AS datei
+         Note.title as text,
+         NoteBox.path || '/' || Note.fileName AS file
   FROM Note
   JOIN NoteBox ON Note.idNoteBox = NoteBox.id
 )
 SELECT
   COALESCE(
-    notes.title,
+    notes.text,
     input.datei
   ) AS text,
   input.datei as file
 FROM input
-LEFT JOIN notes ON notes.datei = input.datei
+LEFT JOIN notes ON notes.file = input.datei
 order by text desc;
 ]]
 
@@ -45,6 +45,9 @@ end
 ---@return string|nil
 function BufferPickerView:getSelectStatement()
 	local bufferNames = Utils.getBufferNames()
+	if #bufferNames == 0 then
+		return "SELECT NULL AS text, NULL AS file WHERE 0"
+	end
 	local bufferPaths = ""
 	for i, name in ipairs(bufferNames) do
 		bufferPaths = bufferPaths .. "('" .. name .. "')"

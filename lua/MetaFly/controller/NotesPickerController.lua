@@ -15,6 +15,9 @@ end
 
 function NotesPickerController.showPicker(pickerName)
 	local view = NotesPickerController.createPickerview(pickerName)
+	if view == nil then
+		return
+	end
 	local options = {}
 	picker.notes(view, options)
 end
