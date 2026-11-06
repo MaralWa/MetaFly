@@ -50,7 +50,7 @@ function BufferPickerView:getSelectStatement()
 	end
 	local bufferPaths = ""
 	for i, name in ipairs(bufferNames) do
-		bufferPaths = bufferPaths .. "('" .. name .. "')"
+		bufferPaths = bufferPaths .. "('" .. name:gsub("'", "''") .. "')"
 		if i < #bufferNames then
 			bufferPaths = bufferPaths .. ", "
 		end
