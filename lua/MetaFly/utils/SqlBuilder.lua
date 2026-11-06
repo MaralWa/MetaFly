@@ -104,7 +104,12 @@ function SqlBuilder:withFrom(tables)
 		return self
 	end
 	for _, tbl in ipairs(tables) do
-		table.insert(self.from, tbl)
+		if vim.tbl_contains(self.from, tbl) then
+			logger.debug("Table " .. tbl .. " already exists in FROM clause. Skipping.")
+		else
+			logger.debug("Adding table to FROM clause: " .. tbl)
+			table.insert(self.from, tbl)
+		end
 	end
 	return self
 end
