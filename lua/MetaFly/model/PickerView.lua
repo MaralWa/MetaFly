@@ -1,7 +1,7 @@
 local MetaFlyView = require("MetaFly.model.MetaFlyView")
 local logger = require("MetaFly.config"):getInstance():getLogger().child("view").child("PickerView")
 
-local PickerView = setmetatable({}, { __index = MetaFlyView })
+local PickerView = setmetatable({}, { __index = MetaFlyView }) -- erbt von MetaFlyView
 PickerView.__index = PickerView
 
 PickerView.columns = { { text = "Note.title" }, { file = "fullFileName" } }
