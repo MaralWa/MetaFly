@@ -56,7 +56,9 @@ function BufferPickerView:getSelectStatement()
 		end
 	end
 
-	local statement = selectStatement:gsub("{{BUFFER_PATHS}}", bufferPaths)
+	local statement = selectStatement:gsub("{{BUFFER_PATHS}}", function()
+		return bufferPaths
+	end)
 	logger:debug("Generated SQL statement: %s", statement)
 	return statement
 end
