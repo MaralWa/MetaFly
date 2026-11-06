@@ -130,7 +130,8 @@ function database:callSql(statement, mode)
 		command = command .. " -" .. mode
 	end
 	-- print("Executing command: " .. command .. ' "' .. statement .. '"')
-	local sqlResult = io.popen(command .. ' "' .. statement .. '"')
+	local escapedStatement = statement:gsub('"', '\\"')
+	local sqlResult = io.popen(command .. ' "' .. escapedStatement .. '"')
 
 	return sqlResult
 end

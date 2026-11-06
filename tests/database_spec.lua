@@ -56,4 +56,24 @@ describe("Database", function()
 		assert.is_table(note)
 		print(vim.inspect(note))
 	end)
+
+	it("escapes double quotes for shell-based SQL execution", function()
+		local previousPopen = io.popen
+		local previousCommand = db:getCommand()
+		local actualCommand
+		db:setCommand("sqlite3 test.db")
+		io.popen = function(command)
+			actualCommand = command
+			return {}
+		end
+
+		local ok, err = pcall(function()
+			db:callSql('SELECT * FROM NoteBox WHERE name = "Some NoteBox"')
+		end)
+
+		io.popen = previousPopen
+		db:setCommand(previousCommand)
+		assert.is_true(ok, err)
+		assert.equals('sqlite3 test.db "SELECT * FROM NoteBox WHERE name = \\"Some NoteBox\\""', actualCommand)
+	end)
 end)

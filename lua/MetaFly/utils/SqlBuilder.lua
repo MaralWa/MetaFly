@@ -1,4 +1,4 @@
-local logger = require("MetaFly.config").getInstance():getLogger("SqlBuilder")
+local logger = require("MetaFly.config"):getInstance():getLogger("SqlBuilder")
 local Utils = require("MetaFly.utils.Utils")
 
 SqlBuilder = {}
@@ -61,23 +61,39 @@ function SqlBuilder:new()
 	return obj
 end
 
+function SqlBuilder:addColumn(dbColumn, asColumn)
+	if columnSnippets[dbColumn] then
+		if asColumn == nil then
+			asColumn = dbColumn
+		end
+		local columnSpec = columnSnippets[dbColumn]
+		table.insert(self.columns, columnSpec.statement .. " AS " .. asColumn)
+		for _, tbl in ipairs(columnSpec.tables) do
+			table.insert(self.from, tbl)
+		end
+		if columnSpec.condition then
+			self:withWhere(columnSpec.condition)
+		end
+	else
+		if asColumn ~= nil then
+			table.insert(self.columns, dbColumn .. " AS " .. asColumn)
+		else
+			table.insert(self.columns, dbColumn)
+		end
+	end
+end
+
 function SqlBuilder:withColumns(cols)
 	if cols == nil or #cols == 0 then
 		return self
 	end
-	local fileName = vim.api.nvim_buf_get_name(0)
 	for _, col in ipairs(cols) do
-		if columnSnippets[col] then
-			local columnSpec = columnSnippets[col]
-			table.insert(self.columns, columnSpec.statement .. " AS " .. col)
-			for _, tbl in ipairs(columnSpec.tables) do
-				table.insert(self.from, tbl)
-			end
-			if columnSpec.condition then
-				self:withWhere(columnSpec.condition)
+		if type(col) == "table" then
+			for asColumn, dbColumn in pairs(col) do
+				self:addColumn(dbColumn, asColumn)
 			end
 		else
-			table.insert(self.columns, col)
+			self:addColumn(col)
 		end
 	end
 	return self
@@ -88,7 +104,12 @@ function SqlBuilder:withFrom(tables)
 		return self
 	end
 	for _, tbl in ipairs(tables) do
-		table.insert(self.from, tbl)
+		if vim.tbl_contains(self.from, tbl) then
+			logger.debug("Table " .. tbl .. " already exists in FROM clause. Skipping.")
+		else
+			logger.debug("Adding table to FROM clause: " .. tbl)
+			table.insert(self.from, tbl)
+		end
 	end
 	return self
 end
@@ -192,7 +213,7 @@ function SqlBuilder:build()
 		query = query .. " GROUP BY " .. table.concat(self.groupBy, ", ")
 	end
 	logger.debug("Built SQL Query: " .. query)
-	return string.gsub(query, '"', '\\"')
+	return query
 end
 
 return SqlBuilder

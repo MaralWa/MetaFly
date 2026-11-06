@@ -1,7 +1,6 @@
 local ViewFactory = require("MetaFly.view.ViewFactory")
 local pickerViewModule = require("MetaFly.model.PickerView")
 local logger = require("MetaFly.config"):getInstance():getLogger().child("picker").child("SnacksNotePicker")
-
 local SnacksNotePicker = {}
 
 ---@param fileName string|nil
@@ -29,28 +28,31 @@ SnacksNotePicker.notesView = function(fileName)
 	SnacksNotePicker.notes(pickerView, options)
 end
 
+SnacksNotePicker.bufferView = function()
+	local bufferName = vim.api.nvim_buf_get_name(0)
+	if bufferName == nil or bufferName == "" then
+		logger.error("Current buffer has no name")
+		vim.notify("Current buffer has no name", vim.log.levels.ERROR)
+		return
+	end
+
+	local pickerView = ViewFactory.readFromBuffer(bufferName)
+	if pickerView == nil then
+		logger.error("Failed to load picker view from buffer: " .. bufferName)
+		vim.notify("Failed to load picker view from buffer: " .. bufferName, vim.log.levels.ERROR)
+		return
+	end
+
+	local options = {}
+	SnacksNotePicker.notes(pickerView, options)
+end
+
 SnacksNotePicker.notes = function(pickerView, opts)
 	local database = require("MetaFly.model.database"):getInstance()
 	local sqlStatement = pickerView:getSelectStatement()
 	logger.info("SnacksNotePicker.notes sqlStatement: " .. sqlStatement)
-	logger.info("SnacksNotePicker.notes SQL Moted: " .. pickerView.sqlMode)
-	local sqlResult = database:callSql(pickerView:getSelectStatement(), pickerView.sqlMode)
+	local items = database:select(sqlStatement)
 
-	local items = {}
-	if sqlResult ~= nil then
-		for line in sqlResult:lines() do
-			logger.debug("Processing line: " .. line)
-			local title, fileName = string.match(line, "(.*)%,(.*)")
-			fileName = fileName:gsub("%s+$", "")
-			logger.debug("Extracted title: " .. tostring(title) .. ", fileName: " .. tostring(fileName))
-			if title and fileName then
-				table.insert(items, {
-					text = title:gsub('"', ""),
-					file = fileName:gsub('"', ""),
-				})
-			end
-		end
-	end
 	logger.info("size of items: " .. #items)
 
 	opts = opts or {}

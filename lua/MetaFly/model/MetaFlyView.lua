@@ -1,6 +1,7 @@
-local SqlBulider = require("MetaFly.utils.SqlBuilder")
+local SqlBuilder = require("MetaFly.utils.SqlBuilder")
 local logger = require("MetaFly.config"):getInstance():getLogger().child("model").child("MetaFlyView")
 local MetaFlyView = {}
+MetaFlyView.__index = MetaFlyView
 
 ---@class MetaFlyView
 ---@field public name string
@@ -17,24 +18,23 @@ local MetaFlyView = {}
 
 ---@param values table
 ---@return MetaFlyView
-function MetaFlyView:new(values)
-	local newObject = setmetatable({}, self)
-	self.__index = self
+function MetaFlyView.new(values)
+	local self = setmetatable({}, MetaFlyView)
 
 	-- Object initialization
-	newObject.name = values["name"]
-	newObject.type = values["type"]
-	newObject.description = values["description"]
-	newObject.columns = vim.deepcopy(values["columns"])
-	newObject.from = values["from"]
-	newObject.where = values["where"]
-	newObject.sqlMode = values["sqlMode"]
-	newObject.inherits = values["inherits"]
-	newObject.orderBy = values["orderBy"]
-	newObject.groupBy = values["groupBy"]
-	newObject.limit = values["limit"]
+	self.name = values["name"]
+	self.type = values["type"]
+	self.description = values["description"]
+	self.columns = vim.deepcopy(values["columns"])
+	self.from = values["from"]
+	self.where = values["where"]
+	self.sqlMode = values["sqlMode"]
+	self.inherits = values["inherits"]
+	self.orderBy = values["orderBy"]
+	self.groupBy = values["groupBy"]
+	self.limit = values["limit"]
 
-	return newObject
+	return self
 end
 
 ---@return string|nil

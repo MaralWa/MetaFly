@@ -11,4 +11,13 @@ describe("MetaFly.utils.SqlBuilder", function()
 			"SELECT NoteBox.path || '/' || Note.fileName AS fullFileName, Note.title FROM NoteBox, Note WHERE Note.idNoteBox = NoteBox.id LIMIT 10"
 		assert.equals(expectedStatement, statement)
 	end)
+
+	it("keeps double quotes in generated SQL", function()
+		local sb = SqlBuilder:new()
+		local statement = sb:withColumns({ "Note.title" }):withFrom({ "NoteBox" })
+			:withWhere('NoteBox.name = "Some NoteBox"')
+			:build()
+
+		assert.equals('SELECT Note.title FROM NoteBox WHERE NoteBox.name = "Some NoteBox"', statement)
+	end)
 end)
