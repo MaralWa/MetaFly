@@ -1,3 +1,4 @@
+local logger = require("MetaFly.config"):getInstance():getLogger().child("model").child("database")
 local sqlite = require("sqlite.db")
 local tbl = require("sqlite.tbl")
 local datetime = sqlite.lib.datetime
@@ -176,29 +177,12 @@ function database:getPropertyOfCurrentBuffer(property)
 		.. fileName
 		.. "'"
 
-	local sqlResult = self:callSql(statement, "json")
-	local jsonResult = ""
-
-	if sqlResult ~= nil then
-		for line in sqlResult:lines() do
-			jsonResult = jsonResult .. line
-		end
-		sqlResult:close()
-	end
-	-- print("SQL Result: " .. jsonResult)
-
-	if jsonResult == nil or jsonResult == "" then
-		return nil
+	local sqlResult = self:select(statement)
+	if #sqlResult == 1 then
+		return sqlResult[1].property
 	end
 
-	local ok, data = pcall(vim.json.decode, jsonResult)
-	if not ok then
-		-- print("Error decoding JSON: " .. data)
-		return nil
-	end
-	if #data == 1 then
-		return data[1].property
-	end
+	return nil
 end
 
 ---@param aTable string
@@ -213,13 +197,13 @@ function database:deleteOther(aTable, aIdNote, aMetaDataIds)
 		.. table.concat(aMetaDataIds, ",")
 		.. ")"
 
-	-- print("Deleting MetaDataToNote for note " .. aIdNote .. " and meta data ids " .. vim.inspect(aMetaDataIds))
 	self:select(deleteQuery)
 end
 
 ---comment
 ---@param statement string
 function database:select(statement)
+	logger.debug("Executing SQL statement: " .. statement)
 	return self.DB:eval(statement)
 end
 
