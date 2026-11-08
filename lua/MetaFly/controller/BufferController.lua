@@ -92,7 +92,6 @@ function BufferController.refreshViews()
 	end
 
 	if #results == 0 then
-		vim.notify("MetaFly refresh: Keine Views im aktuellen Buffer gefunden.", vim.log.levels.INFO)
 		return
 	end
 

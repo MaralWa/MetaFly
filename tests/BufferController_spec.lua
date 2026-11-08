@@ -1,5 +1,6 @@
 local BufferValidator = require("MetaFly.view.BufferValidator")
 local BufferController = require("MetaFly.controller.BufferController")
+local ViewFactory = require("MetaFly.view.ViewFactory")
 local Config = require("MetaFly.config"):getInstance()
 
 describe("MetaFly.controller.BufferController", function()
@@ -8,7 +9,7 @@ describe("MetaFly.controller.BufferController", function()
 			assert.is_function(BufferController.refreshViews)
 		end)
 
-		it("should notify when buffer has no views", function()
+		it("should not notify when buffer has no views", function()
 			-- Create a scratch buffer with no view markers
 			local bufnr = vim.api.nvim_create_buf(false, true)
 			vim.api.nvim_set_current_buf(bufnr)
@@ -18,22 +19,88 @@ describe("MetaFly.controller.BufferController", function()
 				"No MetaFly views here.",
 			})
 
-			local notified_msg = nil
-			local notified_level = nil
+			local notifications = {}
 			local original_notify = vim.notify
 			vim.notify = function(msg, level)
-				notified_msg = msg
-				notified_level = level
+				table.insert(notifications, { msg, level })
 			end
 
+			BufferController.refreshViews()
+			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {})
 			BufferController.refreshViews()
 
 			vim.notify = original_notify
 			vim.api.nvim_buf_delete(bufnr, { force = true })
 
-			assert.is_truthy(notified_msg)
-			assert.is_truthy(notified_msg:find("Keine Views"))
-			assert.are.equal(vim.log.levels.INFO, notified_level)
+			assert.are.same({}, notifications)
+		end)
+
+		it("should refresh valid view regions", function()
+			local bufnr = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_set_current_buf(bufnr)
+			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+				"# Document",
+				'<!-- MetaFlyViewBegin "testview" -->',
+				"old data",
+				'<!-- MetaFlyViewEnd "testview" -->',
+			})
+
+			local original_read = ViewFactory.readFromFile
+			local original_notify = vim.notify
+			local loaded_name
+			ViewFactory.readFromFile = function(name)
+				loaded_name = name
+				return { getViewData = function() return { "new data", "more data" } end }
+			end
+			vim.notify = function() end
+
+			BufferController.refreshViews()
+			local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+			ViewFactory.readFromFile = original_read
+			vim.notify = original_notify
+			vim.api.nvim_buf_delete(bufnr, { force = true })
+
+			assert.are.equal("testview", loaded_name)
+			assert.are.same({
+				"# Document",
+				'<!-- MetaFlyViewBegin "testview" -->',
+				"new data",
+				"more data",
+				'<!-- MetaFlyViewEnd "testview" -->',
+			}, lines)
+		end)
+
+		it("should preserve warnings for missing views and view data", function()
+			local bufnr = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_set_current_buf(bufnr)
+			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+				'<!-- MetaFlyViewBegin "testview" -->',
+				"old data",
+				'<!-- MetaFlyViewEnd "testview" -->',
+			})
+
+			local original_read = ViewFactory.readFromFile
+			local original_notify = vim.notify
+			local notifications = {}
+			vim.notify = function(msg, level)
+				table.insert(notifications, { msg, level })
+			end
+			ViewFactory.readFromFile = function() return nil end
+			BufferController.refreshViews()
+			ViewFactory.readFromFile = function()
+				return { getViewData = function() return nil end }
+			end
+			BufferController.refreshViews()
+
+			ViewFactory.readFromFile = original_read
+			vim.notify = original_notify
+			vim.api.nvim_buf_delete(bufnr, { force = true })
+
+			assert.is_truthy(notifications[1][1]:find("konnte nicht geladen werden", 1, true))
+			assert.are.equal(vim.log.levels.WARN, notifications[1][2])
+			assert.is_truthy(notifications[3][1]:find("Keine Daten", 1, true))
+			assert.are.equal(vim.log.levels.WARN, notifications[3][2])
 		end)
 
 		it("should notify error when buffer has validation errors", function()
@@ -62,6 +129,27 @@ describe("MetaFly.controller.BufferController", function()
 			assert.is_truthy(notified_msg)
 			assert.is_truthy(notified_msg:find("fehlerhafte"))
 			assert.are.equal(vim.log.levels.ERROR, notified_level)
+		end)
+
+		describe("automatic refresh", function()
+			it("should refresh only Markdown filenames on BufEnter", function()
+				local original_refresh = BufferController.refreshViews
+				local calls = 0
+				BufferController.refreshViews = function() calls = calls + 1 end
+				vim.cmd("source " .. vim.fn.fnameescape(vim.fn.getcwd() .. "/plugin/MetaFly.vim"))
+
+				vim.cmd("doautocmd <nomodeline> BufEnter note.md")
+				vim.cmd("doautocmd <nomodeline> BufEnter note.markdown")
+				vim.cmd("doautocmd <nomodeline> BufEnter note.txt")
+				vim.cmd("doautocmd <nomodeline> BufEnter note.lua")
+
+				BufferController.refreshViews = original_refresh
+				vim.cmd("augroup MetaFlyRefreshViews | autocmd! | augroup END")
+				vim.cmd("augroup MetaFlyBufWrite | autocmd! | augroup END")
+				vim.g.loaded_metafly = nil
+				vim.cmd("delcommand MetaFly")
+				assert.are.equal(2, calls)
+			end)
 		end)
 
 		it("should use BufferValidator to detect valid regions", function()
