@@ -54,7 +54,7 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	local items = database:select(sqlStatement)
 
 	if type(items) ~= "table" then
-		vim.notify("No notes found for the given query.", vim.log.levels.WARN)
+		vim.notify("No notes found for picker " .. pickerView.name, vim.log.levels.WARN)
 		return
 	end
 
