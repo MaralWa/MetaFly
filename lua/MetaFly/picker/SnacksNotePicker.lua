@@ -53,6 +53,11 @@ SnacksNotePicker.notes = function(pickerView, opts)
 	logger.info("SnacksNotePicker.notes sqlStatement: " .. sqlStatement)
 	local items = database:select(sqlStatement)
 
+	if type(items) ~= "table" then
+		vim.notify("No notes found for the given query.", vim.log.levels.WARN)
+		return
+	end
+
 	logger.info("size of items: " .. #items)
 
 	opts = opts or {}
