@@ -39,5 +39,5 @@ augroup END
 
 augroup MetaFlyRefreshViews
     autocmd!
-    autocmd BufEnter * call luaeval('require("MetaFly.controller.BufferController").refreshViews()')
+    autocmd BufEnter *.md,*.markdown call luaeval('require("MetaFly.controller.BufferController").refreshViews()')
 augroup END
