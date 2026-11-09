@@ -118,7 +118,7 @@ end
 function NoteBox.selectOrInsertNoteBox(noteBoxconfig)
 	local row = {
 		name = noteBoxconfig.name,
-		path = noteBoxconfig.path,
+		path = noteBoxconfig.path:gsub("/$", ""), -- Remove trailing slash if present
 	}
 	local noteBox = NoteBox.select(row)
 	if noteBox.id > 0 then

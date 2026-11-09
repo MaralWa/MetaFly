@@ -24,7 +24,7 @@ describe("Database", function()
 		noteBoxes = {
 			{
 				name = "TestData",
-				path = "tests/TestData",
+				path = "tests/TestData/",
 				maxdepth = 3,
 				ignored = { "MetaFly", "ignored", "Views" },
 			},
